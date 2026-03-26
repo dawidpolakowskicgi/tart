@@ -1,65 +1,62 @@
-# tart
+# 🥧 tart
 
 `tart` is a lightweight CLI tool for logging task activity.
 
 It is designed to be fast, simple, and predictable:
 
-- no dependencies
-- file-based storage
-- human-readable logs
-- minimal friction for daily use
+* no dependencies
+* file-based storage
+* human-readable logs
+* minimal friction for daily use
+
+---
+
+## Screenshot
+
+![tart screenshot](./src/Screenshot.png)
+
+---
 
 ## What it does
 
-- `tart` → shows the current week's log
-- `tart "message"` → appends a task entry for today
-- `tart --today` or `tart -t` → shows today's entries
-- `tart --this-week` or `tart -tw` → shows current week
-- `tart --week YYYY-Www` → shows a specific ISO week
+* `tart` → shows the current week's log
+* `tart "message"` → appends a task entry for today
+* `tart --today` or `tart -t` → shows today's entries
+* `tart --this-week` or `tart -tw` → shows current week
+* `tart --week YYYY-Www` → shows a specific ISO week
+
+---
 
 ## Installation
 
-### 1) Clone the repository
+### Option 1 — Clone repository
 
 ```bash
-git clone https://github.com/dawidpolakowskicgi/tart.git
+git clone https://github.com/dawidpolakowski/tart.git
 cd tart
-```
-
-### 2) Make the script executable
-
-```bash
 chmod +x tart.sh
-```
-
-### 3) Install it somewhere on your PATH
-
-A simple option is to copy it into `~/bin`:
-
-```bash
-mkdir -p ~/bin
 cp tart.sh ~/bin/tart
 ```
 
-You can also place it anywhere else that is already on your PATH.
-
-### 4) Add `~/bin` to your `~/.zshrc`
-
-If `~/bin` is not already on your PATH, add this line to `~/.zshrc`:
+Make sure `~/bin` is in your PATH:
 
 ```bash
 export PATH="$HOME/bin:$PATH"
 ```
 
-Then reload your shell:
+---
+
+### Option 2 — One-line install (recommended)
 
 ```bash
-source ~/.zshrc
+curl -sL https://raw.githubusercontent.com/dawidpolakowski/tart/main/tart.sh -o /usr/local/bin/tart && chmod +x /usr/local/bin/tart
 ```
+
+---
 
 ## Usage
 
-Show the current week's log:
+Show current week:
 
 ```bash
 tart
@@ -87,31 +84,41 @@ tart --this-week
 tart -tw
 ```
 
-Show a speci
+Show a specific week:
 
-By default, logs are stored in:
+```bash
+tart --week 2026-W13
+```
+
+---
+
+## Data storage
+
+Default location:
 
 ```bash
 ~/Documents/tart
 ```
 
-You can change that by setting `TART_LOGDIR` before running the script:
+Override with environment variable:
 
 ```bash
 export TART_LOGDIR="$HOME/somewhere/tart"
 ```
 
-Each week is stored in its own file:
+File format:
 
 ```bash
 YYYY-Www.log
 ```
 
-Each entry is written as:
+Entry format:
 
 ```bash
 YYYY-MM-DD <message>
 ```
+
+---
 
 ## Example
 
@@ -121,9 +128,10 @@ YYYY-MM-DD <message>
 2026-03-24 reviewed API changes
 ```
 
+---
+
 ## Philosophy
 
 `tart` tracks what you did, not how long it took.
 
-It is meant to be a tiny internal tool that stays out of your way and makes review/reporting easier later.
-
+It is a small tool designed to stay out of your way and make logging and reviewing work effortless.

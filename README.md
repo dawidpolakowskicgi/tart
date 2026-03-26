@@ -13,7 +13,8 @@ It is designed to be fast, simple, and predictable:
 
 - `tart` → shows the current week's log
 - `tart "message"` → appends a task entry for today
-- `tart --today` → shows today's entries
+- `tart --today` or `tart -t` → shows today's entries
+- `tart --this-week` or `tart -tw` → shows current week
 - `tart --week YYYY-Www` → shows a specific ISO week
 
 ## Installation
@@ -74,21 +75,19 @@ Show today's entries:
 
 ```bash
 tart --today
+# or
+tart -t
 ```
 
-Show a specific week:
+Show current week explicitly:
 
 ```bash
-tart --week 2026-W13
+tart --this-week
+# or
+tart -tw
 ```
 
-Show help:
-
-```bash
-tart --help
-```
-
-## Logs
+Show a speci
 
 By default, logs are stored in:
 

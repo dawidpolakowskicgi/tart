@@ -21,9 +21,10 @@ show_tart_help() {
 │ Usage:
 │   tart                        → View current week's log
 │   tart "message"             → Log a task
-│   tart --today                → View today's entries from current week
-│   tart --week YYYY-Www        → View a specific ISO week
-│   tart -h|--help              → Help
+│   tart --today | -t          → View today's entries
+│   tart --this-week | -tw     → View current week
+│   tart --week YYYY-Www       → View a specific ISO week
+│   tart -h|--help             → Help
 ╰──────────────────────────────────────
 EOF_HELP
 }
@@ -32,8 +33,7 @@ get_week_file() {
   local week_ref="${1:-}"
 
   if [[ -n "$week_ref" ]]; then
-    printf '%s.log
-' "$week_ref"
+    printf '%s.log\n' "$week_ref"
   else
     date +"%G-W%V.log"
   fi
@@ -53,10 +53,8 @@ append_tart_entry() {
   local file
   file="$(current_week_path)"
 
-  printf '%s %s
-' "$(date +%F)" "$entry" >> "$file"
-  printf '✓ %s
-' "$entry"
+  printf '%s %s\n' "$(date +%F)" "$entry" >> "$file"
+  printf '✓ %s\n' "$entry"
 }
 
 show_week_entries() {
@@ -90,8 +88,11 @@ main() {
     -h|--help|help|?)
       show_tart_help
       ;;
-    --today)
+    --today|-t)
       show_today_entries
+      ;;
+    --this-week|-tw)
+      show_week_entries "$(current_week_path)"
       ;;
     --week)
       if [[ -z "${2:-}" ]]; then

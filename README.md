@@ -11,6 +11,12 @@ It is designed to be fast, simple, and predictable:
 
 ---
 
+## Screenshot
+
+![tart screenshot](./src/Screenshot.png)
+
+---
+
 ## What it does
 
 * `tart` → shows the current week's log
@@ -23,45 +29,27 @@ It is designed to be fast, simple, and predictable:
 
 ## Installation
 
-### 1) Clone the repository
+### Option 1 — Clone repository
 
 ```bash
 git clone https://github.com/dawidpolakowski/tart.git
 cd tart
-```
- Make the script executable
-
-```bash
 chmod +x tart.sh
-```
-### 2) or Installation no cloning
-```
-curl -sL https://raw.githubusercontent.com/dawidpolakowski/tart/main/tart.sh -o /usr/local/bin/tart && chmod +x /usr/local/bin/tart
-```
-
-### 3) Install it on your PATH
-
-Example using `~/bin`:
-
-```bash
-mkdir -p ~/bin
 cp tart.sh ~/bin/tart
 ```
 
-Or place it in any directory already on your PATH.
-
-### 4) Ensure `~/bin` is on PATH
-
-Add to `~/.zshrc` (or `.bashrc`):
+Make sure `~/bin` is in your PATH:
 
 ```bash
 export PATH="$HOME/bin:$PATH"
 ```
 
-Reload shell:
+---
+
+### Option 2 — One-line install (recommended)
 
 ```bash
-source ~/.zshrc
+curl -sL https://raw.githubusercontent.com/dawidpolakowski/tart/main/tart.sh -o /usr/local/bin/tart && chmod +x /usr/local/bin/tart
 ```
 
 ---

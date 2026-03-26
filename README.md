@@ -1,103 +1,130 @@
-# tart (task activity reporting tool)
+# tart
 
-a lightweight cli tool for logging and reviewing task activity.
+`tart` is a lightweight CLI tool for logging task activity.
 
----
+It is designed to be fast, simple, and predictable:
 
-## overview
+- no dependencies
+- file-based storage
+- human-readable logs
+- minimal friction for daily use
 
-tart is a simple command-line utility designed for quickly capturing what you worked on during the day.
+## What it does
 
-it is not a time tracker — instead, it focuses on **task activity logging** and building a clear historical trail.
+- `tart` → shows the current week's log
+- `tart "message"` → appends a task entry for today
+- `tart --today` → shows today's entries
+- `tart --week YYYY-Www` → shows a specific ISO week
 
-the cli command:
+## Installation
 
-    tart
+### 1) Clone the repository
 
----
+```bash
+git clone https://github.com/dawidpolakowskicgi/tart.git
+cd tart
+```
 
-## features
+### 2) Make the script executable
 
-- quick task logging from the terminal
-- daily and weekly activity tracking
-- simple file-based storage (no dependencies)
-- easy to integrate into workflows and scripts
-- lightweight and fast
+```bash
+chmod +x tart.sh
+```
 
----
+### 3) Install it somewhere on your PATH
 
-## installation
+A simple option is to copy it into `~/bin`:
 
-clone the repository:
+```bash
+mkdir -p ~/bin
+cp tart.sh ~/bin/tart
+```
 
-    git clone <your-repo-url>
-    cd tart
+You can also place it anywhere else that is already on your PATH.
 
-make the script executable:
+### 4) Add `~/bin` to your `~/.zshrc`
 
-    chmod +x tart.sh
+If `~/bin` is not already on your PATH, add this line to `~/.zshrc`:
 
-(optional) move it to your path:
+```bash
+export PATH="$HOME/bin:$PATH"
+```
 
-    mv tart.sh ~/bin/tart
+Then reload your shell:
 
----
+```bash
+source ~/.zshrc
+```
 
-## usage
+## Usage
 
-### show current period (e.g. week)
+Show the current week's log:
 
-    tart
+```bash
+tart
+```
 
-### log a task
+Add a new entry:
 
-    tart "implemented login feature"
+```bash
+tart "implemented login feature"
+```
 
-### help
+Show today's entries:
 
-    tart --help
+```bash
+tart --today
+```
 
----
+Show a specific week:
 
-## configuration
+```bash
+tart --week 2026-W13
+```
 
-by default, logs are stored in:
+Show help:
 
-    ~/documents/tart
+```bash
+tart --help
+```
 
-you can override this location using:
+## Logs
 
-    export tart_logdir="$home/path/to/logs"
+By default, logs are stored in:
 
----
+```bash
+~/Documents/tart
+```
 
-## example output
+You can change that by setting `TART_LOGDIR` before running the script:
 
-    2026-03-23 implemented login feature
-    2026-03-23 fixed authentication bug
-    2026-03-23 code review for api module
+```bash
+export TART_LOGDIR="$HOME/somewhere/tart"
+```
 
----
+Each week is stored in its own file:
 
-## philosophy
+```bash
+YYYY-Www.log
+```
 
-tart is built around a simple idea:
+Each entry is written as:
 
-    track what you did, not how long it took.
+```bash
+YYYY-MM-DD <message>
+```
 
-it is intended to:
-- reduce friction when logging work
-- provide a clear activity history
-- support reporting without overhead
+## Example
 
----
+```bash
+2026-03-23 implemented login feature
+2026-03-24 fixed auth bug
+2026-03-24 reviewed API changes
+```
 
-## contributing
+## Philosophy
 
-internal tool — adapt as needed for your team.
+`tart` tracks what you did, not how long it took.
 
----
+It is meant to be a tiny internal tool that stays out of your way and makes review/reporting easier later.
 
-## license
-
-private / internal use

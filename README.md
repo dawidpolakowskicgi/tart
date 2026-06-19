@@ -13,9 +13,14 @@ It keeps the daily workflow fast, while presenting a more predictable CLI surfac
 * strict date and ISO week validation
 * configurable log directory
 
-## Screenshot
+## Desktop App Screenshot
 
-![tart screenshot](./src/Screenshot.png)
+![tart desktop app screenshot](./src/Screenshot.png)
+
+The image above shows the Electron desktop app that ships with `tart`.
+It gives you the same weekly activity workflow as the CLI, plus tray/menu-bar access, editing, and export actions.
+
+The desktop UI is also covered by automated renderer and core tests, so the screenshot stays in step with the app structure.
 
 ## Installation
 
@@ -257,6 +262,16 @@ Notes:
 * it keeps a tray or menu bar icon active, and minimize or close hides the window there
 * use the tray menu to show the app, open the log directory, or quit
 * it requires Node.js and Electron dependencies installed with `npm install`
+
+## Desktop Testing
+
+The repository includes automated coverage for the desktop app:
+
+* `tests/test_desktop_core.mjs` checks the app core data model and weekly log behavior
+* `tests/test_desktop_renderer.mjs` checks renderer interactions and UI state updates
+* `tests/run.sh` runs the desktop smoke checks, including the scaffold generator and desktop asset checks
+
+If you update the desktop UI or the screenshot, run the test suite and refresh `src/Screenshot.png` so the README matches the current app.
 
 Regenerate native desktop icons from the cake-clock source image:
 

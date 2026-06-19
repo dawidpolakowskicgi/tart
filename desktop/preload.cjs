@@ -13,9 +13,16 @@ async function invoke(channel, ...args) {
 }
 
 contextBridge.exposeInMainWorld("tart", {
-  addEntry: (message) => invoke("tart:add-entry", message),
+  addEntry: (message, time, date) => invoke("tart:add-entry", message, time, date),
+  cloneEntry: (ref, line) => invoke("tart:clone-entry", ref, line),
   exportWeek: (format) => invoke("tart:export-week", format),
-  getState: () => invoke("tart:get-state"),
+  getState: (ref) => invoke("tart:get-state", ref),
+  maximizeWindow: () => invoke("tart:maximize-window"),
   openLogDir: () => invoke("tart:open-log-dir"),
+  minimizeWindow: () => invoke("tart:minimize-window"),
+  deleteEntry: (ref, line) => invoke("tart:delete-entry", ref, line),
+  editEntry: (ref, line, date, time, message) => invoke("tart:edit-entry", ref, line, date, time, message),
+  copyText: (text) => invoke("tart:copy-text", text),
   saveWeek: (text) => invoke("tart:save-week", text),
+  closeWindow: () => invoke("tart:close-window"),
 });

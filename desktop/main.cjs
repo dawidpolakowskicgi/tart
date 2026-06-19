@@ -1,7 +1,7 @@
 const path = require("node:path");
 const fs = require("node:fs");
 const fsPromises = require("node:fs/promises");
-const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell, Tray } = require("electron");
+const { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, shell, Tray } = require("electron");
 const { formatEntriesAsCsv, formatWeekAsPlainText, TartCoreError, TartStore } = require("./tart-core.cjs");
 
 let mainWindow = null;
@@ -56,11 +56,21 @@ function appIconPath() {
 }
 
 function trayIcon() {
-  const size = process.platform === "darwin" ? 18 : 16;
+  const size = process.platform === "darwin" ? 24 : 20;
   return nativeImage.createFromPath(assetPath("tart-clock-icon.png")).resize({
     height: size,
     width: size,
   });
+}
+
+function setDockIcon() {
+  if (process.platform === "darwin" && app.dock) {
+    try {
+      app.dock.setIcon(nativeImage.createFromPath(assetPath("tart-clock-icon.png")));
+    } catch (_error) {
+      app.dock.setIcon(nativeImage.createFromPath(appIconPath()));
+    }
+  }
 }
 
 function createStore() {
@@ -115,6 +125,7 @@ function createWindow() {
     title: "tart",
     backgroundColor: "#f6f7f3",
     icon: appIconPath(),
+    frame: false,
     show: false,
     webPreferences: {
       contextIsolation: true,
@@ -400,6 +411,7 @@ app.whenReady().then(() => {
     app.setAppUserModelId("com.tart.desktop");
   }
 
+  setDockIcon();
   createStore();
   createTray();
   createWindow();
@@ -419,8 +431,34 @@ app.on("window-all-closed", () => {
   }
 });
 
-ipcMain.handle("tart:get-state", () => handleDesktopAction(() => store.getState()));
-ipcMain.handle("tart:add-entry", (_event, message) => handleDesktopAction(() => store.addEntry(message).then(() => store.getState())));
+ipcMain.handle("tart:get-state", (_event, ref) => handleDesktopAction(() => store.getState(ref)));
+ipcMain.handle("tart:add-entry", (_event, message, time, date) => handleDesktopAction(() => store.addEntry(message, time, date).then(() => store.getState())));
+ipcMain.handle("tart:clone-entry", (_event, ref, line) => handleDesktopAction(() => store.cloneEntry(ref, line).then(() => store.getState(ref))));
+ipcMain.handle("tart:delete-entry", (_event, ref, line) => handleDesktopAction(() => store.deleteEntry(ref, line).then(() => store.getState(ref))));
+ipcMain.handle("tart:edit-entry", (_event, ref, line, date, time, message) => handleDesktopAction(() => store.editEntry(ref, line, date, time, message).then(() => store.getState(ref))));
+ipcMain.handle("tart:copy-text", (_event, text) => handleDesktopAction(() => {
+  clipboard.writeText(String(text || ""));
+  return true;
+}));
 ipcMain.handle("tart:save-week", (_event, text) => handleDesktopAction(() => store.saveWeek("", text).then(() => store.getState())));
 ipcMain.handle("tart:open-log-dir", () => handleDesktopAction(openLogDirectory));
 ipcMain.handle("tart:export-week", (_event, format) => handleDesktopAction(() => exportWeek(format)));
+ipcMain.handle("tart:minimize-window", () => handleDesktopAction(() => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.minimize();
+  }
+}));
+ipcMain.handle("tart:maximize-window", () => handleDesktopAction(() => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  }
+}));
+ipcMain.handle("tart:close-window", () => handleDesktopAction(() => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.close();
+  }
+}));

@@ -17,8 +17,8 @@ It keeps the daily workflow fast, while presenting a more predictable CLI surfac
 
 ![tart desktop app screenshot](./src/Screenshot.png)
 
-The image above shows the Electron desktop app that ships with `tart`.
-It gives you the same weekly activity workflow as the CLI, plus tray/menu-bar access, editing, and export actions.
+The image above shows the current Electron desktop app layout for `tart`.
+It now uses a full-width top chrome, a left workspace panel, compact date and time controls for new entries, week filtering, inline editing, and export actions.
 
 The desktop UI is also covered by automated renderer and core tests, so the screenshot stays in step with the app structure.
 
@@ -143,6 +143,12 @@ Latest release assets:
 
 The release archives include the CLI, the Electron desktop app source, installer scripts, and launcher assets.
 
+## Project Docs
+
+- [Contributing](./CONTRIBUTING.md)
+- [Security Policy](./SECURITY.md)
+- [Changelog](./CHANGELOG.md)
+
 ## Project Base
 
 Create a new Electron desktop project scaffold based on `tart`:
@@ -245,11 +251,9 @@ npm run desktop
 The desktop app provides:
 
 ```text
-Add entry
-Optional ticket or link reference
-This week
-Today
-Raw weekly editor
+Add entry with date, time, and optional ticket or link reference
+Week, today, and raw weekly editor views
+Week filtering with selectable week, from, and to fields
 Export week as TXT, CSV, or PDF
 Open log directory
 ```

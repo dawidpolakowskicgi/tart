@@ -1,13 +1,18 @@
 const path = require("node:path");
 const fs = require("node:fs");
 const fsPromises = require("node:fs/promises");
-const { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, shell, Tray } = require("electron");
+const { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, screen, shell, Tray } = require("electron");
 const { formatEntriesAsCsv, formatWeekAsPlainText, TartCoreError, TartStore } = require("./tart-core.cjs");
 
 let mainWindow = null;
 let store = null;
 let tray = null;
 let isQuitting = false;
+
+const DEFAULT_WINDOW_WIDTH = 1080;
+const DEFAULT_WINDOW_HEIGHT = 760;
+const MIN_WINDOW_WIDTH = 900;
+const MIN_WINDOW_HEIGHT = 620;
 
 const exportFormats = {
   csv: {
@@ -116,17 +121,40 @@ function hideMainWindowToTray() {
   hideDockIcon();
 }
 
+function fitWindowToContent(contentHeight) {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isMaximized() || mainWindow.isFullScreen()) {
+    return;
+  }
+
+  const requestedHeight = Number(contentHeight);
+  if (!Number.isFinite(requestedHeight) || requestedHeight <= 0) {
+    return;
+  }
+
+  const display = screen.getDisplayMatching(mainWindow.getBounds());
+  const maxHeight = Math.max(MIN_WINDOW_HEIGHT, display.workArea.height - 24);
+  const nextHeight = Math.max(MIN_WINDOW_HEIGHT, Math.min(Math.ceil(requestedHeight), maxHeight));
+  const [currentWidth, currentHeight] = mainWindow.getContentSize();
+
+  if (Math.abs(currentHeight - nextHeight) < 4) {
+    return;
+  }
+
+  mainWindow.setContentSize(currentWidth, nextHeight, true);
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1080,
-    height: 720,
-    minWidth: 900,
-    minHeight: 620,
+    width: DEFAULT_WINDOW_WIDTH,
+    height: DEFAULT_WINDOW_HEIGHT,
+    minWidth: MIN_WINDOW_WIDTH,
+    minHeight: MIN_WINDOW_HEIGHT,
     title: "tart",
     backgroundColor: "#f6f7f3",
     icon: appIconPath(),
     frame: false,
     show: false,
+    useContentSize: true,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -461,4 +489,8 @@ ipcMain.handle("tart:close-window", () => handleDesktopAction(() => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.close();
   }
+}));
+ipcMain.handle("tart:fit-window-height", (_event, contentHeight) => handleDesktopAction(() => {
+  fitWindowToContent(contentHeight);
+  return true;
 }));

@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld("tart", {
   deleteEntry: (ref, line) => invoke("tart:delete-entry", ref, line),
   editEntry: (ref, line, date, time, message) => invoke("tart:edit-entry", ref, line, date, time, message),
   copyText: (text) => invoke("tart:copy-text", text),
+  fitWindowHeight: (height) => invoke("tart:fit-window-height", height),
   saveWeek: (text) => invoke("tart:save-week", text),
   closeWindow: () => invoke("tart:close-window"),
 });

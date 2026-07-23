@@ -29,6 +29,10 @@ function formatLocalDate(date = new Date()) {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
+function formatLocalDateTime(date = new Date()) {
+  return `${formatLocalDate(date)} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
 function parseDateLiteral(value) {
   const match = DATE_PATTERN.exec(value || "");
   if (!match) {
@@ -118,15 +122,18 @@ function normalizeLogText(text) {
 
 function parseEntryLine(line, index) {
   const date = line.slice(0, 10);
-  const hasSeparator = line.slice(10, 11) === " ";
-  const message = hasSeparator ? line.slice(11) : line;
+  const hasTimestamp = line.slice(10, 11) === " " && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2} /.test(line);
+  const hasDateOnlySeparator = line.slice(10, 11) === " ";
+  const time = hasTimestamp ? line.slice(11, 16) : "";
+  const message = hasTimestamp ? line.slice(17) : hasDateOnlySeparator ? line.slice(11) : line;
 
   return {
     id: `${index}-${line}`,
     date,
+    time,
     message,
     line,
-    valid: DATE_PATTERN.test(date) && hasSeparator,
+    valid: DATE_PATTERN.test(date) && (hasTimestamp || hasDateOnlySeparator),
   };
 }
 
@@ -139,6 +146,10 @@ function parseEntries(text) {
 
 function formatWeekAsPlainText(week) {
   return normalizeLogText(week && week.text ? week.text : "");
+}
+
+function sortWeekStartsDescending(left, right) {
+  return String(right).localeCompare(String(left));
 }
 
 function escapeCsvCell(value) {
@@ -166,6 +177,7 @@ class TartStore {
     this.env = options.env || process.env;
     this.logDir = options.logDir || this.env.TART_LOGDIR || defaultLogDir(options.homeDir);
     this.todayOverride = options.today || this.env.TART_TODAY || "";
+    this.now = typeof options.now === "function" ? options.now : () => new Date();
   }
 
   todayDate() {
@@ -200,8 +212,25 @@ class TartStore {
     }
   }
 
-  async addEntry(message) {
+  async listAvailableWeeks() {
+    try {
+      const entries = await fs.readdir(this.logDir, { withFileTypes: true });
+      return entries
+        .filter((entry) => entry.isFile() && /^([0-9]{4}-[0-9]{2}-[0-9]{2})\.log$/.test(entry.name))
+        .map((entry) => entry.name.slice(0, -4))
+        .sort(sortWeekStartsDescending);
+    } catch (error) {
+      if (error && error.code === "ENOENT") {
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  async addEntry(message, time = "", date = "") {
     const cleanMessage = String(message || "").trim();
+    const cleanTime = String(time || "").trim();
+    const cleanDate = String(date || "").trim();
 
     if (!cleanMessage) {
       throw new TartCoreError("missing entry message");
@@ -212,14 +241,20 @@ class TartStore {
     }
 
     const today = this.todayDate();
-    const filePath = this.weekPath(today);
-    const line = `${today} ${cleanMessage}`;
+    const entryDate = cleanDate || today;
+    if (cleanDate && !DATE_PATTERN.test(cleanDate)) {
+      throw new TartCoreError(`invalid date: ${cleanDate}`);
+    }
+    const filePath = this.weekPath(entryDate);
+    const timestamp = cleanTime ? `${entryDate} ${cleanTime}` : formatLocalDateTime(this.now()).replace(/^([0-9]{4}-[0-9]{2}-[0-9]{2})/, entryDate);
+    const line = `${timestamp} ${cleanMessage}`;
 
     await this.ensureLogDir();
     await fs.appendFile(filePath, `${line}\n`, "utf8");
 
     return {
-      date: today,
+      date: entryDate,
+      time: timestamp.slice(11, 16),
       message: cleanMessage,
       line,
       filePath,
@@ -259,15 +294,85 @@ class TartStore {
     return this.readWeek(weekStart);
   }
 
+  async deleteEntry(ref, line) {
+    const weekStart = this.weekStart(ref || "");
+    const filePath = this.weekPath(weekStart);
+    const week = await this.readWeek(weekStart);
+    const targetLine = String(line || "");
+
+    await this.ensureLogDir();
+    const nextText = week.entries
+      .filter((entry) => entry.line !== targetLine)
+      .map((entry) => entry.line)
+      .join("\n");
+
+    await fs.writeFile(filePath, normalizeLogText(nextText), "utf8");
+    return this.readWeek(weekStart);
+  }
+
+  async cloneEntry(ref, line) {
+    const weekStart = this.weekStart(ref || "");
+    const filePath = this.weekPath(weekStart);
+    const cleanLine = String(line || "").trim();
+
+    if (!cleanLine) {
+      throw new TartCoreError("missing entry line");
+    }
+
+    await this.ensureLogDir();
+    await fs.appendFile(filePath, `${cleanLine}\n`, "utf8");
+    return this.readWeek(weekStart);
+  }
+
+  async editEntry(ref, line, date, time, message) {
+    const weekStart = this.weekStart(ref || "");
+    const filePath = this.weekPath(weekStart);
+    const cleanLine = String(line || "").trim();
+    const cleanDate = String(date || "").trim();
+    const cleanTime = String(time || "").trim();
+    const cleanMessage = String(message || "").trim();
+
+    if (!cleanLine) {
+      throw new TartCoreError("missing entry line");
+    }
+
+    if (!cleanMessage) {
+      throw new TartCoreError("missing entry message");
+    }
+
+    if (cleanDate && !DATE_PATTERN.test(cleanDate)) {
+      throw new TartCoreError(`invalid date: ${cleanDate}`);
+    }
+
+    const week = await this.readWeek(weekStart);
+    const nextText = week.entries
+      .map((entry) => {
+        if (entry.line !== cleanLine) {
+          return entry.line;
+        }
+
+        const nextDate = cleanDate || entry.date;
+        const nextTime = cleanTime || entry.time;
+        return `${nextDate}${nextTime ? ` ${nextTime}` : ""} ${cleanMessage}`;
+      })
+      .join("\n");
+
+    await this.ensureLogDir();
+    await fs.writeFile(filePath, normalizeLogText(nextText), "utf8");
+    return this.readWeek(weekStart);
+  }
+
   async getState(ref = "") {
     const week = await this.readWeek(ref);
     const today = await this.readToday();
+    const availableWeeks = await this.listAvailableWeeks();
 
     return {
       config: {
         logDir: this.logDir,
         currentFile: this.weekPath(this.todayDate()),
       },
+      availableWeeks,
       today,
       week,
     };
@@ -281,11 +386,13 @@ module.exports = {
   escapeCsvCell,
   formatEntriesAsCsv,
   formatLocalDate,
+  formatLocalDateTime,
   formatUtcDate,
   formatWeekAsPlainText,
   normalizeLogText,
   parseDateLiteral,
   parseEntries,
+  sortWeekStartsDescending,
   weekStartForDate,
   weekStartForIsoWeek,
   weekStartFromRef,

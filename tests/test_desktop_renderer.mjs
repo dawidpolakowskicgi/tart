@@ -61,7 +61,14 @@ class FakeElement {
 
 class FakeDocument {
   constructor() {
+    this.body = { dataset: {} };
     this.elements = new Map();
+    this.themeButton = new FakeElement({ id: "themeButton", className: "theme-button", dataset: { theme: "dark" } });
+    this.windowButtons = [
+      new FakeElement({ className: "window-controls__button", dataset: { windowAction: "minimize" } }),
+      new FakeElement({ className: "window-controls__button", dataset: { windowAction: "maximize" } }),
+      new FakeElement({ className: "window-controls__button is-close", dataset: { windowAction: "close" } }),
+    ];
     this.tabs = [
       new FakeElement({ className: "tab is-active", dataset: { view: "week" } }),
       new FakeElement({ className: "tab", dataset: { view: "today" } }),
@@ -81,24 +88,36 @@ class FakeDocument {
     for (const id of [
       "entryForm",
       "entryInput",
+      "entryDateInput",
+      "entryTimeInput",
+      "applyWeekFilterButton",
       "logDir",
+      "clearWeekFilterButton",
+      "filterSummary",
+      "copyWeekButton",
       "openLogDirButton",
+      "rangeEndInput",
+      "rangeStartInput",
       "referenceInput",
       "refreshButton",
+      "entrySubmitButton",
       "saveWeekButton",
       "status",
       "todayCount",
       "todayDate",
       "todayEntries",
       "viewTitle",
+      "weekRefInput",
       "weekCount",
       "weekEditor",
       "weekEntries",
       "weekFile",
       "weekLabel",
+      "themeButton",
     ]) {
       this.elements.set(`#${id}`, new FakeElement({ id }));
     }
+    this.elements.set("#themeButton", this.themeButton);
   }
 
   createElement() {
@@ -118,6 +137,10 @@ class FakeDocument {
       return this.exportButtons;
     }
 
+    if (selector === ".window-controls__button") {
+      return this.windowButtons;
+    }
+
     if (selector === ".view") {
       return this.views;
     }
@@ -132,11 +155,13 @@ function makeState(overrides = {}) {
       currentFile: "/tmp/tart/2026-04-27.log",
       logDir: "/tmp/tart",
     },
+    availableWeeks: ["2026-04-27", "2026-04-20"],
     today: {
       date: "2026-04-30",
       entries: [
         {
           date: "2026-04-30",
+          time: "09:15",
           message: "current day",
         },
       ],
@@ -145,15 +170,17 @@ function makeState(overrides = {}) {
       entries: [
         {
           date: "2026-04-29",
+          time: "08:30",
           message: "previous day",
         },
         {
           date: "2026-04-30",
+          time: "09:15",
           message: "current day",
         },
       ],
       filePath: "/tmp/tart/2026-04-27.log",
-      text: "2026-04-29 previous day\n2026-04-30 current day\n",
+      text: "2026-04-29 08:30 previous day\n2026-04-30 09:15 current day\n",
       weekStart: "2026-04-27",
     },
     ...overrides,
@@ -164,23 +191,23 @@ function makeRenderer(apiOverrides = {}) {
   const document = new FakeDocument();
   const calls = [];
   const api = {
-    addEntry: async (message) => {
-      calls.push(["addEntry", message]);
+    addEntry: async (message, time = "", date = "") => {
+      calls.push(["addEntry", message, time, date]);
       return makeState({
         today: {
           date: "2026-04-30",
-          entries: [{ date: "2026-04-30", message }],
+          entries: [{ date: "2026-04-30", time: "09:15", message }],
         },
         week: {
-          entries: [{ date: "2026-04-30", message }],
+          entries: [{ date: "2026-04-30", time: "09:15", message }],
           filePath: "/tmp/tart/2026-04-27.log",
-          text: `2026-04-30 ${message}\n`,
+          text: `2026-04-30 09:15 ${message}\n`,
           weekStart: "2026-04-27",
         },
       });
     },
-    getState: async () => {
-      calls.push(["getState"]);
+    getState: async (ref = "") => {
+      calls.push(["getState", ref]);
       return makeState();
     },
     exportWeek: async (format) => {
@@ -199,12 +226,44 @@ function makeRenderer(apiOverrides = {}) {
       calls.push(["saveWeek", text]);
       return makeState({
         week: {
-          entries: [{ date: "2026-04-30", message: "saved" }],
+          entries: [{ date: "2026-04-30", time: "09:15", message: "saved" }],
           filePath: "/tmp/tart/2026-04-27.log",
           text,
           weekStart: "2026-04-27",
         },
       });
+    },
+    copyText: async (text) => {
+      calls.push(["copyText", text]);
+      return true;
+    },
+    editEntry: async (ref, line, date, time, message) => {
+      calls.push(["editEntry", ref, line, date, time, message]);
+      return makeState({
+        week: {
+          entries: [{ date: "2026-04-29", time: "08:30", message }],
+          filePath: "/tmp/tart/2026-04-27.log",
+          text: `2026-04-29 08:30 ${message}\n`,
+          weekStart: "2026-04-27",
+        },
+      });
+    },
+    cloneEntry: async (ref, line) => {
+      calls.push(["cloneEntry", ref, line]);
+      const [date, time, ...messageParts] = String(line).split(" ");
+      const message = messageParts.join(" ");
+      return makeState({
+        week: {
+          entries: [{ date, time, message }],
+          filePath: "/tmp/tart/2026-04-27.log",
+          text: `${line}\n`,
+          weekStart: "2026-04-27",
+        },
+      });
+    },
+    deleteEntry: async (ref, line) => {
+      calls.push(["deleteEntry", ref, line]);
+      return makeState();
     },
     ...apiOverrides,
   };
@@ -239,14 +298,20 @@ await runTest("renderer starts and paints initial state", async () => {
 
   await renderer.start();
 
-  assert.deepEqual(calls, [["getState"]]);
+  assert.deepEqual(calls, [["getState", ""]]);
+  assert.equal(renderer.elements.entryDateInput.value.length, 10);
+  assert.equal(renderer.elements.entryTimeInput.value.length, 5);
   assert.equal(renderer.elements.viewTitle.textContent, "This week");
   assert.equal(renderer.elements.weekLabel.textContent, "Week of 2026-04-27");
   assert.equal(renderer.elements.weekCount.textContent, "2");
   assert.equal(renderer.elements.todayCount.textContent, "1");
   assert.equal(renderer.elements.logDir.textContent, "/tmp/tart");
+  assert.equal(renderer.elements.themeButton.textContent, "Dark");
   assert.equal(renderer.elements.weekEntries.children.length, 2);
   assert.equal(renderer.elements.todayEntries.children.length, 1);
+  assert.equal(renderer.elements.weekRefInput.value, "2026-04-27");
+  assert.equal(renderer.elements.weekRefInput.children.length, 2);
+  assert.equal(renderer.elements.filterSummary.textContent, "Week reference 2026-04-27. Showing 2 of 2 entries from start of week to end of week.");
 });
 
 await runTest("renderer switches views", () => {
@@ -276,35 +341,118 @@ await runTest("renderer shows empty states", () => {
 
   assert.equal(renderer.elements.weekEntries.children.length, 1);
   assert.equal(renderer.elements.weekEntries.children[0].className, "empty-state");
-  assert.equal(renderer.elements.weekEntries.children[0].textContent, "No entries for this week");
+  assert.equal(renderer.elements.weekEntries.children[0].textContent, "No entries match the selected date range");
   assert.equal(renderer.elements.todayEntries.children[0].textContent, "No entries for today");
+});
+
+await runTest("renderer filters week by date range", async () => {
+  const { renderer } = makeRenderer();
+
+  renderer.elements.weekRefInput.value = "2026-04-30";
+  renderer.elements.rangeStartInput.value = "2026-04-30";
+  renderer.elements.rangeEndInput.value = "2026-04-30";
+  await renderer.applyWeekFilter({ preventDefault() {} });
+
+  assert.equal(renderer.getCurrentState().week.weekStart, "2026-04-27");
+  assert.equal(renderer.elements.weekCount.textContent, "1");
+  assert.equal(renderer.elements.weekEntries.children.length, 1);
+  assert.equal(renderer.elements.weekEntries.children[0].children[1].textContent, "current day");
+  assert.equal(renderer.elements.weekEntries.children[0].children[0].textContent, "2026-04-30 09:15");
+  assert.equal(renderer.elements.filterSummary.textContent, "Week reference 2026-04-27. Showing 1 of 2 entries from 2026-04-30 to 2026-04-30.");
+});
+
+await runTest("renderer cycles theme label on click", async () => {
+  const { document, renderer } = makeRenderer();
+
+  await renderer.start();
+  await document.themeButton.listeners.click();
+
+  assert.equal(renderer.elements.themeButton.textContent, "Light");
+  assert.equal(document.body.dataset.theme, "light");
+});
+
+await runTest("renderer clears week filters", async () => {
+  const { renderer } = makeRenderer();
+
+  renderer.elements.rangeStartInput.value = "2026-04-30";
+  renderer.elements.rangeEndInput.value = "2026-04-30";
+  await renderer.applyWeekFilter({ preventDefault() {} });
+  await renderer.clearWeekFilter();
+
+  assert.equal(renderer.elements.rangeStartInput.value, "");
+  assert.equal(renderer.elements.rangeEndInput.value, "");
+  assert.equal(renderer.elements.weekCount.textContent, "2");
 });
 
 await runTest("renderer adds trimmed entries", async () => {
   const { calls, renderer } = makeRenderer();
   renderer.elements.entryInput.value = "  shipped electron app  ";
+  renderer.elements.entryDateInput.value = "2026-04-30";
+  renderer.elements.entryTimeInput.value = "09:15";
 
   await renderer.addEntry({ preventDefault() {} });
 
-  assert.deepEqual(calls, [["addEntry", "shipped electron app"]]);
+  assert.deepEqual(calls, [["addEntry", "shipped electron app", "09:15", "2026-04-30"]]);
   assert.equal(renderer.elements.entryInput.value, "");
+  assert.equal(renderer.elements.entryDateInput.value, "");
+  assert.equal(renderer.elements.entryTimeInput.value, "");
   assert.equal(renderer.elements.status.textContent, "Entry added.");
   assert.equal(renderer.elements.status.dataset.tone, "ok");
   assert.equal(renderer.getCurrentView(), "week");
+  assert.equal(renderer.elements.weekEntries.children[0].children[0].textContent, "2026-04-30 09:15");
   assert.equal(renderer.elements.weekEntries.children[0].children[1].textContent, "shipped electron app");
 });
 
 await runTest("renderer appends ticket or link references", async () => {
   const { calls, renderer } = makeRenderer();
   renderer.elements.entryInput.value = "Updated invoice workflow";
+  renderer.elements.entryDateInput.value = "2026-04-30";
+  renderer.elements.entryTimeInput.value = "09:15";
   renderer.elements.referenceInput.value = " CGI-123 ";
 
   await renderer.addEntry({ preventDefault() {} });
 
-  assert.deepEqual(calls, [["addEntry", "Updated invoice workflow [ref: CGI-123]"]]);
+  assert.deepEqual(calls, [["addEntry", "Updated invoice workflow [ref: CGI-123]", "09:15", "2026-04-30"]]);
   assert.equal(renderer.elements.entryInput.value, "");
   assert.equal(renderer.elements.referenceInput.value, "");
+  assert.equal(renderer.elements.weekEntries.children[0].children[0].textContent, "2026-04-30 09:15");
   assert.equal(renderer.elements.weekEntries.children[0].children[1].textContent, "Updated invoice workflow [ref: CGI-123]");
+});
+
+await runTest("renderer clones and deletes log rows", async () => {
+  const { calls, renderer } = makeRenderer();
+
+  await renderer.start();
+  let actions = renderer.elements.weekEntries.children[0].children[2];
+  await actions.children[0].listeners.click();
+  assert.equal(renderer.elements.entrySubmitButton.textContent, "Save");
+  assert.equal(renderer.elements.entryInput.value, "previous day");
+  assert.equal(renderer.elements.entryDateInput.value, "2026-04-29");
+  assert.equal(renderer.elements.entryTimeInput.value, "08:30");
+  renderer.elements.entryDateInput.value = "2026-04-30";
+  renderer.elements.entryTimeInput.value = "09:45";
+  renderer.elements.entryInput.value = "updated row";
+  await renderer.addEntry({ preventDefault() {} });
+  assert(calls.some(([name, ref, line, date, time, message]) => name === "editEntry" && ref === "2026-04-27" && line === "2026-04-29 08:30 previous day" && date === "2026-04-30" && time === "09:45" && message === "updated row"));
+
+  actions = renderer.elements.weekEntries.children[0].children[2];
+  await actions.children[1].listeners.click();
+  assert(calls.some(([name, ref, line]) => name === "cloneEntry" && ref === "2026-04-27" && line === "2026-04-29 08:30 updated row"));
+
+  actions = renderer.elements.weekEntries.children[0].children[2];
+  await actions.children[2].listeners.click();
+  assert(calls.some(([name, ref]) => name === "deleteEntry" && ref === "2026-04-27"));
+  assert.equal(renderer.elements.status.textContent, "Entry deleted.");
+});
+
+await runTest("renderer copies visible week text", async () => {
+  const { calls, renderer } = makeRenderer();
+
+  await renderer.start();
+  await renderer.elements.copyWeekButton.listeners.click();
+
+  assert(calls.some(([name, text]) => name === "copyText" && text.includes("2026-04-29 08:30 previous day")));
+  assert.equal(renderer.elements.status.textContent, "Copied week log to clipboard.");
 });
 
 await runTest("renderer builds reference messages", () => {
@@ -355,7 +503,7 @@ await runTest("renderer exports week formats", async () => {
   await renderer.start();
   await document.exportButtons[1].listeners.click();
 
-  assert.deepEqual(calls, [["getState"], ["exportWeek", "csv"]]);
+  assert.deepEqual(calls, [["getState", ""], ["exportWeek", "csv"]]);
   assert.equal(renderer.elements.status.textContent, "Exported CSV week to /tmp/tart/week.csv.");
   assert.equal(renderer.elements.status.dataset.tone, "ok");
 });

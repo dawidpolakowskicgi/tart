@@ -1,5 +1,9 @@
 # tart
 
+![CI](https://github.com/dawidpolakowski/tart/actions/workflows/tests.yml/badge.svg)
+![Release](https://img.shields.io/github/v/release/dawidpolakowski/tart)
+![License](https://img.shields.io/github/license/dawidpolakowski/tart)
+
 `tart` is a lightweight command-line tool for logging task activity.
 
 It is open source under the MIT License.

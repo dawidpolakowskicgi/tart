@@ -1,8 +1,8 @@
 # tart
 
-![CI](https://github.com/dawidpolakowski/tart/actions/workflows/tests.yml/badge.svg)
-![Release](https://img.shields.io/github/v/release/dawidpolakowski/tart)
-![License](https://img.shields.io/github/license/dawidpolakowski/tart)
+![CI](https://github.com/dawidpolakowskicgi/tart/actions/workflows/tests.yml/badge.svg)
+![Release](https://img.shields.io/github/v/release/dawidpolakowskicgi/tart)
+![License](https://img.shields.io/github/license/dawidpolakowskicgi/tart)
 
 `tart` is a lightweight command-line tool for logging task activity.
 
@@ -31,13 +31,13 @@ The desktop UI is also covered by automated renderer and core tests, so the scre
 ### Linux
 
 ```bash
-curl -fsSL https://github.com/dawidpolakowski/tart/releases/latest/download/install.sh | bash
+curl -fsSL https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install.sh | bash
 ```
 
 ### macOS
 
 ```bash
-curl -fsSL https://github.com/dawidpolakowski/tart/releases/latest/download/install-macos.sh | bash
+curl -fsSL https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install-macos.sh | bash
 ```
 
 The macOS installer puts the CLI in:
@@ -69,7 +69,7 @@ The desktop app needs Node.js and npm so the installer can install Electron depe
 Install from a local clone:
 
 ```bash
-git clone https://github.com/dawidpolakowski/tart.git
+git clone https://github.com/dawidpolakowskicgi/tart.git
 cd tart
 ./scripts/install-macos.sh
 ```
@@ -111,7 +111,7 @@ alias tart-desktop='cd /Users/dawidpolakowski/Git/work/tart && npm run desktop'
 Install from a local clone:
 
 ```bash
-git clone https://github.com/dawidpolakowski/tart.git
+git clone https://github.com/dawidpolakowskicgi/tart.git
 cd tart
 ./scripts/install.sh
 ```
@@ -129,7 +129,7 @@ Install Git for Windows first, because `tart` runs through Git Bash on Windows.
 Then run this in PowerShell:
 
 ```powershell
-irm https://github.com/dawidpolakowski/tart/releases/latest/download/install.ps1 | iex
+irm https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install.ps1 | iex
 ```
 
 The installer puts `tart` in:
@@ -147,7 +147,7 @@ tart version
 Install from a local clone:
 
 ```powershell
-git clone https://github.com/dawidpolakowski/tart.git
+git clone https://github.com/dawidpolakowskicgi/tart.git
 cd tart
 powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1
 ```
@@ -156,12 +156,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1
 
 Latest release assets:
 
-* [Shell installer](https://github.com/dawidpolakowski/tart/releases/latest/download/install.sh)
-* [macOS installer](https://github.com/dawidpolakowski/tart/releases/latest/download/install-macos.sh)
-* [PowerShell installer](https://github.com/dawidpolakowski/tart/releases/latest/download/install.ps1)
-* [Linux archive](https://github.com/dawidpolakowski/tart/releases/latest/download/tart-linux.tar.gz)
-* [macOS archive](https://github.com/dawidpolakowski/tart/releases/latest/download/tart-macos.tar.gz)
-* [Windows archive](https://github.com/dawidpolakowski/tart/releases/latest/download/tart-windows.zip)
+* [Shell installer](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install.sh)
+* [macOS installer](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install-macos.sh)
+* [PowerShell installer](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install.ps1)
+* [Linux archive](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/tart-linux.tar.gz)
+* [macOS archive](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/tart-macos.tar.gz)
+* [Windows archive](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/tart-windows.zip)
 
 The release archives include the CLI, the Electron desktop app source, installer scripts, and launcher assets.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TART_RAW_URL="${TART_RAW_URL:-https://raw.githubusercontent.com/dawidpolakowski/tart/main/tart.sh}"
+TART_RAW_URL="${TART_RAW_URL:-https://raw.githubusercontent.com/dawidpolakowskicgi/tart/main/tart.sh}"
 TART_INSTALL_DIR="${TART_INSTALL_DIR:-${HOME}/.local/bin}"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

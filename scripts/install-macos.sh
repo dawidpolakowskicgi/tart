@@ -9,7 +9,7 @@ fi
 TART_INSTALL_DIR="${TART_INSTALL_DIR:-${HOME}/.local/bin}"
 TART_MACOS_APP_DIR="${TART_MACOS_APP_DIR:-${HOME}/Applications}"
 TART_MACOS_SUPPORT_DIR="${TART_MACOS_SUPPORT_DIR:-${HOME}/Library/Application Support/tart}"
-TART_MACOS_ARCHIVE_URL="${TART_MACOS_ARCHIVE_URL:-https://github.com/dawidpolakowski/tart/releases/latest/download/tart-macos.tar.gz}"
+TART_MACOS_ARCHIVE_URL="${TART_MACOS_ARCHIVE_URL:-https://github.com/dawidpolakowskicgi/tart/releases/latest/download/tart-macos.tar.gz}"
 TART_SKIP_DESKTOP="${TART_SKIP_DESKTOP:-0}"
 TART_SKIP_NPM_INSTALL="${TART_SKIP_NPM_INSTALL:-0}"
 

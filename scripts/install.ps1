@@ -1,6 +1,6 @@
 param(
     [string]$InstallDir = "$env:LOCALAPPDATA\tart\bin",
-    [string]$SourceUrl = "https://raw.githubusercontent.com/dawidpolakowski/tart/main/tart.sh",
+    [string]$SourceUrl = "https://raw.githubusercontent.com/dawidpolakowskicgi/tart/main/tart.sh",
     [switch]$NoPathUpdate
 )
 

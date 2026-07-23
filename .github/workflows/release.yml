@@ -95,13 +95,15 @@ jobs:
           test -f "$output_dir/tart-macos.tar.gz"
           test -f "$output_dir/tart-windows.zip"
           test -f "$output_dir/SHA256SUMS.txt"
-          tar -tzf "$output_dir/tart-linux.tar.gz" | grep -q "/package.json"
-          tar -tzf "$output_dir/tart-linux.tar.gz" | grep -q "/scripts/install-macos.sh"
-          tar -tzf "$output_dir/tart-linux.tar.gz" | grep -q "/desktop/main.cjs"
-          tar -tzf "$output_dir/tart-linux.tar.gz" | grep -q "/desktop/index.html"
-          tar -tzf "$output_dir/tart-linux.tar.gz" | grep -q "/assets/tart-clock-icon.icns"
-          tar -tzf "$output_dir/tart-linux.tar.gz" | grep -q "/assets/tart-clock-icon.ico"
-          tar -tzf "$output_dir/tart-linux.tar.gz" | grep -q "/assets/tart-clock-icon.png"
+          archive_listing="$(mktemp)"
+          tar -tzf "$output_dir/tart-linux.tar.gz" > "$archive_listing"
+          grep -q "/package.json" "$archive_listing"
+          grep -q "/scripts/install-macos.sh" "$archive_listing"
+          grep -q "/desktop/main.cjs" "$archive_listing"
+          grep -q "/desktop/index.html" "$archive_listing"
+          grep -q "/assets/tart-clock-icon.icns" "$archive_listing"
+          grep -q "/assets/tart-clock-icon.ico" "$archive_listing"
+          grep -q "/assets/tart-clock-icon.png" "$archive_listing"
 
   verify-windows:
     name: Verify (windows-latest)

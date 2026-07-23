@@ -77,10 +77,42 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
   let currentRange = { end: "", start: "" };
   let currentTheme = "dark";
   let currentEditing = null;
+  let fitWindowScheduled = false;
+
+  function scheduleWindowFit() {
+    if (!api.fitWindowHeight || fitWindowScheduled) {
+      return;
+    }
+
+    fitWindowScheduled = true;
+    const run = () => {
+      fitWindowScheduled = false;
+
+      const documentHeight = documentRef.documentElement && documentRef.documentElement.scrollHeight
+        ? documentRef.documentElement.scrollHeight
+        : 0;
+      const bodyHeight = documentRef.body && documentRef.body.scrollHeight
+        ? documentRef.body.scrollHeight
+        : 0;
+      const nextHeight = Math.max(documentHeight, bodyHeight);
+
+      if (nextHeight > 0) {
+        api.fitWindowHeight(nextHeight).catch(() => {});
+      }
+    };
+
+    if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(run);
+      return;
+    }
+
+    setTimeout(run, 0);
+  }
 
   function setStatus(message, tone = "") {
     elements.status.textContent = message || "";
     elements.status.dataset.tone = tone;
+    scheduleWindowFit();
   }
 
   function setBusy(isBusy) {
@@ -108,6 +140,7 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
     if (!currentEditing) {
       elements.entryForm.dataset.mode = "create";
       elements.entrySubmitButton.textContent = "+ Add";
+      scheduleWindowFit();
       return;
     }
 
@@ -117,6 +150,7 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
     elements.entryInput.value = currentEditing.message;
     elements.referenceInput.value = "";
     elements.entrySubmitButton.textContent = "Save";
+    scheduleWindowFit();
   }
 
   function isEntryWithinRange(entry, range) {
@@ -171,6 +205,8 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
     for (const panel of elements.views) {
       panel.classList.toggle("is-active", panel.id === `${view}View`);
     }
+
+    scheduleWindowFit();
   }
 
   function applyTheme(themeName) {
@@ -296,6 +332,7 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
     renderEntries(elements.weekEntries, filteredEntries, "No entries match the selected date range");
     renderEntries(elements.todayEntries, state.today.entries, "No entries for today");
     updateFilterSummary(state, filteredEntries);
+    scheduleWindowFit();
   }
 
   async function loadState(ref = currentWeekRef) {
@@ -479,6 +516,7 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
       elements.themeButton.addEventListener("click", () => {
         const nextTheme = currentTheme === "dark" ? "light" : "dark";
         applyTheme(nextTheme);
+        scheduleWindowFit();
       });
     }
     for (const button of elements.windowButtons) {
@@ -515,6 +553,12 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
     }
     setEditingEntry(null);
     showView(currentView);
+    if (typeof ResizeObserver !== "undefined" && documentRef.body) {
+      const resizeObserver = new ResizeObserver(() => {
+        scheduleWindowFit();
+      });
+      resizeObserver.observe(documentRef.body);
+    }
     return loadState();
   }
 

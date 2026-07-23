@@ -113,8 +113,11 @@
 
       <main class="workspace">
         <div class="workspace-title">
-          <p class="eyebrow">Task Activity Reporting Tool</p>
-          <h2 id="viewTitle">This week</h2>
+          <div class="workspace-title__copy">
+            <p class="eyebrow">Task Activity Reporting Tool</p>
+            <h2 id="viewTitle">This week</h2>
+          </div>
+          <button id="entrySubmitButton" class="hero-button" type="submit" form="entryForm">+ Add</button>
         </div>
 
         <form class="entry-form" id="entryForm">
@@ -122,7 +125,6 @@
           <input id="entryTimeInput" name="entryTime" autocomplete="off" type="time" aria-label="Log time">
           <input id="entryInput" name="entry" autocomplete="off" maxlength="240" placeholder="Add activity text to log" aria-label="Log entry">
           <input id="referenceInput" name="reference" autocomplete="off" maxlength="180" placeholder="Ticket or link" aria-label="Ticket number or link">
-          <button id="entrySubmitButton" type="submit">+ Add</button>
         </form>
 
         <p class="status" id="status" role="status"></p>

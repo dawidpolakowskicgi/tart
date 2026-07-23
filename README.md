@@ -18,7 +18,7 @@ It keeps the daily workflow fast, while presenting a more predictable CLI surfac
 ![tart desktop app screenshot](./src/Screenshot.png)
 
 The image above shows the current Electron desktop app layout for `tart`.
-It now uses a full-width top chrome, a left workspace panel, compact date and time controls for new entries, week filtering, inline editing, and export actions.
+It uses a full-width top chrome, a left workspace panel, separate date and time controls for new entries, week filtering, inline editing, copy/export actions, and row-level task actions.
 
 The desktop UI is also covered by automated renderer and core tests, so the screenshot stays in step with the app structure.
 
@@ -40,6 +40,12 @@ The macOS installer puts the CLI in:
 
 ```text
 ~/.local/bin/tart
+```
+
+Add this to `~/.zshrc` or `~/.zprofile` if you want to run `tart` from any shell:
+
+```zsh
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
 It also installs the desktop app in:
@@ -84,7 +90,19 @@ The shell installer puts `tart` in:
 ~/.local/bin/tart
 ```
 
+Add this to `~/.zshrc` or `~/.zprofile` if you want to run `tart` from any shell:
+
+```zsh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
 If `~/.local/bin` is not already in your `PATH`, the installer prints the exact line to add to your shell profile.
+
+If you want a simple desktop launcher alias in zsh, add:
+
+```zsh
+alias tart-desktop='cd /Users/dawidpolakowski/Git/work/tart && npm run desktop'
+```
 
 Install from a local clone:
 

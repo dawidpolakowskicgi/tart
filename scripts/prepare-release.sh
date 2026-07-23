@@ -8,7 +8,7 @@ fi
 
 readonly VERSION_TAG="$1"
 readonly OUTPUT_DIR="$2"
-readonly RELEASE_URL_BASE="https://github.com/dawidpolakowski/tart/releases/download/${VERSION_TAG}"
+readonly RELEASE_URL_BASE="https://github.com/dawidpolakowskicgi/tart/releases/download/${VERSION_TAG}"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
@@ -50,17 +50,17 @@ cp "${repo_root}/assets/tart-icon-key.png" "$package_root/assets/"
 chmod 0755 "$package_root/tart.sh" "$package_root/tart-desktop" "$package_root/scripts/install.sh" "$package_root/scripts/install-macos.sh"
 
 sed \
-  "s|https://raw.githubusercontent.com/dawidpolakowski/tart/main/tart.sh|${RELEASE_URL_BASE}/tart.sh|g" \
+  "s|https://raw.githubusercontent.com/dawidpolakowskicgi/tart/main/tart.sh|${RELEASE_URL_BASE}/tart.sh|g" \
   "${repo_root}/scripts/install.sh" > "${OUTPUT_DIR}/install.sh"
 chmod 0755 "${OUTPUT_DIR}/install.sh"
 
 sed \
-  "s|https://github.com/dawidpolakowski/tart/releases/latest/download/tart-macos.tar.gz|${RELEASE_URL_BASE}/tart-macos.tar.gz|g" \
+  "s|https://github.com/dawidpolakowskicgi/tart/releases/latest/download/tart-macos.tar.gz|${RELEASE_URL_BASE}/tart-macos.tar.gz|g" \
   "${repo_root}/scripts/install-macos.sh" > "${OUTPUT_DIR}/install-macos.sh"
 chmod 0755 "${OUTPUT_DIR}/install-macos.sh"
 
 sed \
-  "s|https://raw.githubusercontent.com/dawidpolakowski/tart/main/tart.sh|${RELEASE_URL_BASE}/tart.sh|g" \
+  "s|https://raw.githubusercontent.com/dawidpolakowskicgi/tart/main/tart.sh|${RELEASE_URL_BASE}/tart.sh|g" \
   "${repo_root}/scripts/install.ps1" > "${OUTPUT_DIR}/install.ps1"
 
 cp "${repo_root}/tart.sh" "${OUTPUT_DIR}/tart.sh"

@@ -2,7 +2,7 @@
 set -u
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TART_BIN="${ROOT_DIR}/tart.sh"
+WORKTRACE_BIN="${ROOT_DIR}/worktrace.sh"
 TEST_TODAY="2026-04-30"
 TEST_WEEK_START="2026-04-27"
 
@@ -18,7 +18,7 @@ new_log_dir() {
   for candidate in "${TMPDIR:-}" "${TMP:-}" "${TEMP:-}" /tmp /private/tmp; do
     if [[ -n "$candidate" && -d "$candidate" ]]; then
       base="${candidate%/}"
-      mktemp -d "${base}/tart-test.XXXXXX"
+      mktemp -d "${base}/worktrace-test.XXXXXX"
       return
     fi
   done
@@ -33,7 +33,7 @@ cleanup_log_dir() {
   fi
 }
 
-run_tart() {
+run_worktrace() {
   local log_dir="$1"
   shift
 
@@ -43,7 +43,7 @@ run_tart() {
     return
   fi
 
-  LAST_OUTPUT="$(TART_LOGDIR="$log_dir" TART_TODAY="$TEST_TODAY" "$TART_BIN" "$@" 2>&1)"
+  LAST_OUTPUT="$(WORKTRACE_LOGDIR="$log_dir" WORKTRACE_TODAY="$TEST_TODAY" "$WORKTRACE_BIN" "$@" 2>&1)"
   LAST_STATUS=$?
 }
 
@@ -129,53 +129,53 @@ write_week_log() {
 }
 
 test_help_and_version() {
-  run_tart "$TEST_TMPDIR" help
+  run_worktrace "$TEST_TMPDIR" help
   assert_status 0 || return 1
   assert_contains "$LAST_OUTPUT" "Usage:" || return 1
   assert_contains "$LAST_OUTPUT" "Commands:" || return 1
 
-  run_tart "$TEST_TMPDIR" version
+  run_worktrace "$TEST_TMPDIR" version
   assert_status 0 || return 1
-  assert_eq "tart 0.2.0" "$LAST_OUTPUT"
+  assert_eq "worktrace 0.2.0" "$LAST_OUTPUT"
 }
 
 test_command_help_aliases_are_consistent() {
-  run_tart "$TEST_TMPDIR" add --help
+  run_worktrace "$TEST_TMPDIR" add --help
   assert_status 0 || return 1
   assert_contains "$LAST_OUTPUT" "Commands:" || return 1
   assert_file_missing "${TEST_TMPDIR}/${TEST_WEEK_START}.log" || return 1
 
-  run_tart "$TEST_TMPDIR" today --help
+  run_worktrace "$TEST_TMPDIR" today --help
   assert_status 0 || return 1
   assert_contains "$LAST_OUTPUT" "Usage:" || return 1
 
-  run_tart "$TEST_TMPDIR" init --help
+  run_worktrace "$TEST_TMPDIR" init --help
   assert_status 0 || return 1
   assert_contains "$LAST_OUTPUT" "Global options:" || return 1
 
-  run_tart "$TEST_TMPDIR" config --help
+  run_worktrace "$TEST_TMPDIR" config --help
   assert_status 0 || return 1
   assert_contains "$LAST_OUTPUT" "Environment:" || return 1
 
-  run_tart "$TEST_TMPDIR" version --help
+  run_worktrace "$TEST_TMPDIR" version --help
   assert_status 0 || return 1
   assert_contains "$LAST_OUTPUT" "Usage:" || return 1
 }
 
 test_help_and_version_reject_extra_args() {
-  run_tart "$TEST_TMPDIR" help extra
+  run_worktrace "$TEST_TMPDIR" help extra
   assert_status 2 || return 1
   assert_contains "$LAST_OUTPUT" "help does not accept arguments" || return 1
 
-  run_tart "$TEST_TMPDIR" version extra
+  run_worktrace "$TEST_TMPDIR" version extra
   assert_status 2 || return 1
   assert_contains "$LAST_OUTPUT" "version does not accept arguments"
 }
 
 test_init_creates_log_dir() {
-  run_tart "$TEST_TMPDIR" init
+  run_worktrace "$TEST_TMPDIR" init
   assert_status 0 || return 1
-  assert_eq "Initialized tart log directory: ${TEST_TMPDIR}" "$LAST_OUTPUT" || return 1
+  assert_eq "Initialized worktrace log directory: ${TEST_TMPDIR}" "$LAST_OUTPUT" || return 1
 
   if [[ ! -d "$TEST_TMPDIR" ]]; then
     printf 'expected log directory to exist: %s\n' "$TEST_TMPDIR" >&2
@@ -184,21 +184,21 @@ test_init_creates_log_dir() {
 }
 
 test_add_writes_to_current_week_file() {
-  run_tart "$TEST_TMPDIR" add implemented enterprise tests
+  run_worktrace "$TEST_TMPDIR" add implemented enterprise tests
   assert_status 0 || return 1
   assert_eq "Logged: ${TEST_TODAY} implemented enterprise tests" "$LAST_OUTPUT" || return 1
   assert_file_eq "${TEST_TMPDIR}/${TEST_WEEK_START}.log" "${TEST_TODAY} implemented enterprise tests"
 }
 
 test_quick_add_remains_backwards_compatible() {
-  run_tart "$TEST_TMPDIR" quick compatibility entry
+  run_worktrace "$TEST_TMPDIR" quick compatibility entry
   assert_status 0 || return 1
   assert_eq "Logged: ${TEST_TODAY} quick compatibility entry" "$LAST_OUTPUT" || return 1
   assert_file_eq "${TEST_TMPDIR}/${TEST_WEEK_START}.log" "${TEST_TODAY} quick compatibility entry"
 }
 
 test_dash_prefixed_messages_are_supported() {
-  run_tart "$TEST_TMPDIR" -- -dash-prefixed note
+  run_worktrace "$TEST_TMPDIR" -- -dash-prefixed note
   assert_status 0 || return 1
   assert_eq "Logged: ${TEST_TODAY} -dash-prefixed note" "$LAST_OUTPUT" || return 1
   assert_file_eq "${TEST_TMPDIR}/${TEST_WEEK_START}.log" "${TEST_TODAY} -dash-prefixed note"
@@ -207,11 +207,11 @@ test_dash_prefixed_messages_are_supported() {
 test_list_defaults_to_current_week() {
   write_week_log "$TEST_TMPDIR" "${TEST_TODAY} reviewed command dispatch"
 
-  run_tart "$TEST_TMPDIR"
+  run_worktrace "$TEST_TMPDIR"
   assert_status 0 || return 1
   assert_eq "${TEST_TODAY} reviewed command dispatch" "$LAST_OUTPUT" || return 1
 
-  run_tart "$TEST_TMPDIR" list
+  run_worktrace "$TEST_TMPDIR" list
   assert_status 0 || return 1
   assert_eq "${TEST_TODAY} reviewed command dispatch" "$LAST_OUTPUT"
 }
@@ -220,11 +220,11 @@ test_today_filters_current_date() {
   write_week_log "$TEST_TMPDIR" "2026-04-29 previous day
 ${TEST_TODAY} current day"
 
-  run_tart "$TEST_TMPDIR" today
+  run_worktrace "$TEST_TMPDIR" today
   assert_status 0 || return 1
   assert_eq "${TEST_TODAY} current day" "$LAST_OUTPUT" || return 1
 
-  run_tart "$TEST_TMPDIR" --today
+  run_worktrace "$TEST_TMPDIR" --today
   assert_status 0 || return 1
   assert_eq "${TEST_TODAY} current day" "$LAST_OUTPUT"
 }
@@ -232,16 +232,16 @@ ${TEST_TODAY} current day"
 test_week_references_normalize_to_monday() {
   local expected_path="${TEST_TMPDIR}/${TEST_WEEK_START}.log"
 
-  run_tart "$TEST_TMPDIR" path 2026-04-30
+  run_worktrace "$TEST_TMPDIR" path 2026-04-30
   assert_status 0 || return 1
   assert_eq "$expected_path" "$LAST_OUTPUT" || return 1
 
-  run_tart "$TEST_TMPDIR" path 2026-W18
+  run_worktrace "$TEST_TMPDIR" path 2026-W18
   assert_status 0 || return 1
   assert_eq "$expected_path" "$LAST_OUTPUT" || return 1
 
   write_week_log "$TEST_TMPDIR" "${TEST_TODAY} normalized ISO week"
-  run_tart "$TEST_TMPDIR" list --week 2026-W18
+  run_worktrace "$TEST_TMPDIR" list --week 2026-W18
   assert_status 0 || return 1
   assert_eq "${TEST_TODAY} normalized ISO week" "$LAST_OUTPUT"
 }
@@ -249,11 +249,11 @@ test_week_references_normalize_to_monday() {
 test_legacy_week_aliases() {
   write_week_log "$TEST_TMPDIR" "${TEST_TODAY} legacy alias entry"
 
-  run_tart "$TEST_TMPDIR" --this-week
+  run_worktrace "$TEST_TMPDIR" --this-week
   assert_status 0 || return 1
   assert_eq "${TEST_TODAY} legacy alias entry" "$LAST_OUTPUT" || return 1
 
-  run_tart "$TEST_TMPDIR" --week 2026-04-30
+  run_worktrace "$TEST_TMPDIR" --week 2026-04-30
   assert_status 0 || return 1
   assert_eq "${TEST_TODAY} legacy alias entry" "$LAST_OUTPUT"
 }
@@ -264,7 +264,7 @@ log_dir=${TEST_TMPDIR}
 current_week=${TEST_WEEK_START}
 current_file=${TEST_TMPDIR}/${TEST_WEEK_START}.log"
 
-  run_tart "$TEST_TMPDIR" config
+  run_worktrace "$TEST_TMPDIR" config
   assert_status 0 || return 1
   assert_eq "$expected" "$LAST_OUTPUT"
 }
@@ -273,32 +273,32 @@ test_global_log_dir_overrides_environment() {
   local override_dir
   override_dir="${TEST_TMPDIR}/override"
 
-  run_tart "$TEST_TMPDIR" --log-dir "$override_dir" add overridden directory
+  run_worktrace "$TEST_TMPDIR" --log-dir "$override_dir" add overridden directory
   assert_status 0 || return 1
   assert_eq "Logged: ${TEST_TODAY} overridden directory" "$LAST_OUTPUT" || return 1
   assert_file_eq "${override_dir}/${TEST_WEEK_START}.log" "${TEST_TODAY} overridden directory"
 }
 
 test_invalid_date_returns_usage_error() {
-  run_tart "$TEST_TMPDIR" path 2026-02-30
+  run_worktrace "$TEST_TMPDIR" path 2026-02-30
   assert_status 2 || return 1
   assert_contains "$LAST_OUTPUT" "invalid date: 2026-02-30"
 }
 
 test_invalid_iso_week_returns_usage_error() {
-  run_tart "$TEST_TMPDIR" path 2021-W53
+  run_worktrace "$TEST_TMPDIR" path 2021-W53
   assert_status 2 || return 1
   assert_contains "$LAST_OUTPUT" "invalid ISO week: 2021-W53"
 }
 
 test_missing_add_message_returns_usage_error() {
-  run_tart "$TEST_TMPDIR" add
+  run_worktrace "$TEST_TMPDIR" add
   assert_status 2 || return 1
   assert_contains "$LAST_OUTPUT" "missing entry message"
 }
 
 test_multiline_add_message_returns_usage_error() {
-  run_tart "$TEST_TMPDIR" add $'first line\nsecond line'
+  run_worktrace "$TEST_TMPDIR" add $'first line\nsecond line'
   assert_status 2 || return 1
   assert_contains "$LAST_OUTPUT" "entry message must be a single line" || return 1
   assert_file_missing "${TEST_TMPDIR}/${TEST_WEEK_START}.log"
@@ -313,9 +313,9 @@ test_desktop_renderer_suite() {
 }
 
 test_desktop_icon_assets_exist() {
-  assert_file_nonempty "${ROOT_DIR}/assets/tart-clock-icon.png" || return 1
-  assert_file_nonempty "${ROOT_DIR}/assets/tart-clock-icon.icns" || return 1
-  assert_file_nonempty "${ROOT_DIR}/assets/tart-clock-icon.ico"
+  assert_file_nonempty "${ROOT_DIR}/assets/worktrace-clock-icon.png" || return 1
+  assert_file_nonempty "${ROOT_DIR}/assets/worktrace-clock-icon.icns" || return 1
+  assert_file_nonempty "${ROOT_DIR}/assets/worktrace-clock-icon.ico"
 }
 
 test_project_base_generator_smoke() {
@@ -334,7 +334,7 @@ test_project_base_generator_smoke() {
 
   package_json="$(<"${target_dir}/package.json")"
   assert_contains "$package_json" '"name": "focus-journal"' || return 1
-  assert_contains "$package_json" '"description": "Focus Journal desktop starter generated from tart"' || return 1
+  assert_contains "$package_json" '"description": "Focus Journal desktop starter generated from CGI Worktrace"' || return 1
 
   readme_html="$(<"${target_dir}/README.md")"
   assert_contains "$readme_html" '# Focus Journal' || return 1
@@ -350,27 +350,27 @@ test_macos_installer_smoke() {
 
   bin_dir="${TEST_TMPDIR}/bin"
   app_dir="${TEST_TMPDIR}/Applications"
-  support_dir="${TEST_TMPDIR}/Application Support/tart"
+  support_dir="${TEST_TMPDIR}/Application Support/worktrace"
 
   output="$(
-    TART_INSTALL_DIR="$bin_dir" \
-      TART_MACOS_APP_DIR="$app_dir" \
-      TART_MACOS_SUPPORT_DIR="$support_dir" \
-      TART_SKIP_NPM_INSTALL=1 \
+    WORKTRACE_INSTALL_DIR="$bin_dir" \
+      WORKTRACE_MACOS_APP_DIR="$app_dir" \
+      WORKTRACE_MACOS_SUPPORT_DIR="$support_dir" \
+      WORKTRACE_SKIP_NPM_INSTALL=1 \
       "${ROOT_DIR}/scripts/install-macos.sh" 2>&1
   )" || {
     printf '%s\n' "$output" >&2
     return 1
   }
 
-  assert_file_nonempty "${bin_dir}/tart" || return 1
-  assert_file_nonempty "${support_dir}/tart-desktop" || return 1
+  assert_file_nonempty "${bin_dir}/worktrace" || return 1
+  assert_file_nonempty "${support_dir}/worktrace-desktop" || return 1
   assert_file_nonempty "${support_dir}/desktop/main.cjs" || return 1
-  assert_file_nonempty "${app_dir}/tart.app/Contents/MacOS/tart" || return 1
-  assert_file_nonempty "${app_dir}/tart.app/Contents/Info.plist" || return 1
-  assert_file_nonempty "${app_dir}/tart.app/Contents/Resources/tart-clock-icon.icns" || return 1
+  assert_file_nonempty "${app_dir}/CGI Worktrace.app/Contents/MacOS/worktrace" || return 1
+  assert_file_nonempty "${app_dir}/CGI Worktrace.app/Contents/Info.plist" || return 1
+  assert_file_nonempty "${app_dir}/CGI Worktrace.app/Contents/Resources/worktrace-clock-icon.icns" || return 1
 
-  assert_eq "tart 0.2.0" "$("${bin_dir}/tart" version)"
+  assert_eq "worktrace 0.2.0" "$("${bin_dir}/worktrace" version)"
 }
 
 run_test() {

@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Create a reusable Electron desktop project scaffold based on tart.
+Create a reusable Electron desktop project scaffold based on worktrace.
 
 Usage:
   create-project-base.sh <project-name> [target-dir]
@@ -52,14 +52,14 @@ copy_icon_assets() {
   local target_dir="$2"
 
   mkdir -p "$target_dir"
-  cp "${source_dir}/tart-clock-icon.png" "${target_dir}/app-icon.png"
+  cp "${source_dir}/worktrace-clock-icon.png" "${target_dir}/app-icon.png"
 
-  if [[ -f "${source_dir}/tart-clock-icon.icns" ]]; then
-    cp "${source_dir}/tart-clock-icon.icns" "${target_dir}/app-icon.icns"
+  if [[ -f "${source_dir}/worktrace-clock-icon.icns" ]]; then
+    cp "${source_dir}/worktrace-clock-icon.icns" "${target_dir}/app-icon.icns"
   fi
 
-  if [[ -f "${source_dir}/tart-clock-icon.ico" ]]; then
-    cp "${source_dir}/tart-clock-icon.ico" "${target_dir}/app-icon.ico"
+  if [[ -f "${source_dir}/worktrace-clock-icon.ico" ]]; then
+    cp "${source_dir}/worktrace-clock-icon.ico" "${target_dir}/app-icon.ico"
   fi
 }
 
@@ -97,7 +97,7 @@ if [[ -z "$APP_SLUG" ]]; then
   exit 2
 fi
 
-APP_DESCRIPTION="${APP_NAME} desktop starter generated from tart"
+APP_DESCRIPTION="${APP_NAME} desktop starter generated from CGI Worktrace"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_DIR="${2:-${ROOT_DIR}/${APP_SLUG}}"
@@ -139,7 +139,7 @@ EOF
 write_text_file "$TARGET_DIR/README.md" <<'EOF'
 # __APP_NAME__
 
-This project starter was generated from `tart`.
+This project starter was generated from `CGI Worktrace`.
 
 It gives you a solid Electron desktop base with:
 
@@ -181,7 +181,7 @@ The starter stores logs in:
 
 ## Notes
 
-The scaffold intentionally keeps the file-backed weekly log model from tart so you can start from a working desktop app instead of an empty Electron shell.
+The scaffold intentionally keeps the file-backed weekly log model from CGI Worktrace so you can start from a working desktop app instead of an empty Electron shell.
 EOF
 
 write_text_file "$TARGET_DIR/desktop/app-core.cjs" <<'EOF'

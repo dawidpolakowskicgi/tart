@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# tart - Task Activity Reporting Tool
+# worktrace - CGI Worktrace
 #
 # Defaults:
-#   TART_LOGDIR -> ~/Documents/tart
+#   WORKTRACE_LOGDIR -> ~/Documents/worktrace
 #
 # Each week is stored as: YYYY-MM-DD.log (the Monday of that ISO week)
 # Entry format: YYYY-MM-DD <message>
 
-readonly TART_VERSION="0.2.0"
-TART_LOGDIR="${TART_LOGDIR:-${HOME}/Documents/tart}"
-TART_ARGS=()
-TART_FORCE_ADD=0
+readonly WORKTRACE_VERSION="0.2.0"
+WORKTRACE_LOGDIR="${WORKTRACE_LOGDIR:-${HOME}/Documents/worktrace}"
+WORKTRACE_ARGS=()
+WORKTRACE_FORCE_ADD=0
 
 print_usage() {
   cat <<'EOF_HELP'
-tart - Task Activity Reporting Tool
+worktrace - CGI Worktrace
 
 Usage:
-  tart [global options] [command] [arguments]
+  worktrace [global options] [command] [arguments]
 
 Quick use:
-  tart                         Show the current week's log
-  tart "message"               Add a task entry for today
+  worktrace                         Show the current week's log
+  worktrace "message"               Add a task entry for today
 
 Commands:
   add <message...>             Add a task entry for today
@@ -41,27 +41,27 @@ Week refs:
   YYYY-Www                     ISO week, for example 2026-W18
 
 Global options:
-  --log-dir <path>             Override TART_LOGDIR for this run
+  --log-dir <path>             Override WORKTRACE_LOGDIR for this run
   -h, --help                   Show help
   -v, --version                Show version
 
 Legacy aliases:
-  -t, --today                  Same as: tart today
-  -tw, --this-week             Same as: tart list
-  --week <ref>                 Same as: tart week <ref>
+  -t, --today                  Same as: worktrace today
+  -tw, --this-week             Same as: worktrace list
+  --week <ref>                 Same as: worktrace week <ref>
 
 Environment:
-  TART_LOGDIR                  Default: ~/Documents/tart
+  WORKTRACE_LOGDIR                  Default: ~/Documents/worktrace
 EOF_HELP
 }
 
 print_version() {
-  printf 'tart %s\n' "$TART_VERSION"
+  printf 'worktrace %s\n' "$WORKTRACE_VERSION"
 }
 
 usage_error() {
-  printf 'tart: %s\n' "$1" >&2
-  printf "Run 'tart help' for usage.\n" >&2
+  printf 'worktrace: %s\n' "$1" >&2
+  printf "Run 'worktrace help' for usage.\n" >&2
   exit 2
 }
 
@@ -90,14 +90,14 @@ maybe_print_help() {
   return 1
 }
 
-ensure_tart_dirs() {
-  mkdir -p "$TART_LOGDIR"
+ensure_worktrace_dirs() {
+  mkdir -p "$WORKTRACE_LOGDIR"
 }
 
 today_date() {
-  if [[ -n "${TART_TODAY:-}" ]]; then
-    date_is_valid "$TART_TODAY" || usage_error "invalid TART_TODAY: ${TART_TODAY}"
-    printf '%s\n' "$TART_TODAY"
+  if [[ -n "${WORKTRACE_TODAY:-}" ]]; then
+    date_is_valid "$WORKTRACE_TODAY" || usage_error "invalid WORKTRACE_TODAY: ${WORKTRACE_TODAY}"
+    printf '%s\n' "$WORKTRACE_TODAY"
     return 0
   fi
 
@@ -236,7 +236,7 @@ week_start_from_ref() {
 log_file_for_week_start() {
   local week_start="$1"
 
-  printf '%s/%s.log\n' "$TART_LOGDIR" "$week_start"
+  printf '%s/%s.log\n' "$WORKTRACE_LOGDIR" "$week_start"
 }
 
 log_file_for_week_ref() {
@@ -247,7 +247,7 @@ log_file_for_week_ref() {
   log_file_for_week_start "$week_start"
 }
 
-append_tart_entry() {
+append_worktrace_entry() {
   local entry="$*"
   local today week_start file
 
@@ -263,7 +263,7 @@ append_tart_entry() {
   week_start="$(week_start_from_ref "$today")"
   file="$(log_file_for_week_start "$week_start")"
 
-  ensure_tart_dirs
+  ensure_worktrace_dirs
   printf '%s %s\n' "$today" "$entry" >> "$file"
   printf 'Logged: %s %s\n' "$today" "$entry"
 }
@@ -300,15 +300,15 @@ show_today_entries() {
 cmd_add() {
   if [[ "${1:-}" == "--" ]]; then
     shift
-    append_tart_entry "$@"
+    append_worktrace_entry "$@"
     return 0
   fi
 
-  if [[ "$TART_FORCE_ADD" != "1" ]] && maybe_print_help "$@"; then
+  if [[ "$WORKTRACE_FORCE_ADD" != "1" ]] && maybe_print_help "$@"; then
     return 0
   fi
 
-  append_tart_entry "$@"
+  append_worktrace_entry "$@"
 }
 
 cmd_list() {
@@ -382,8 +382,8 @@ cmd_init() {
   fi
 
   require_no_args "init" "$@"
-  ensure_tart_dirs
-  printf 'Initialized tart log directory: %s\n' "$TART_LOGDIR"
+  ensure_worktrace_dirs
+  printf 'Initialized worktrace log directory: %s\n' "$WORKTRACE_LOGDIR"
 }
 
 cmd_config() {
@@ -397,8 +397,8 @@ cmd_config() {
   current_week="$(week_start_from_ref)"
   current_file="$(log_file_for_week_start "$current_week")"
 
-  printf 'version=%s\n' "$TART_VERSION"
-  printf 'log_dir=%s\n' "$TART_LOGDIR"
+  printf 'version=%s\n' "$WORKTRACE_VERSION"
+  printf 'log_dir=%s\n' "$WORKTRACE_LOGDIR"
   printf 'current_week=%s\n' "$current_week"
   printf 'current_file=%s\n' "$current_file"
 }
@@ -438,18 +438,18 @@ parse_global_options() {
         if [[ -z "${1:-}" ]]; then
           usage_error "missing value for --log-dir"
         fi
-        TART_LOGDIR="$1"
+        WORKTRACE_LOGDIR="$1"
         ;;
       --log-dir=*)
-        TART_LOGDIR="${1#*=}"
-        if [[ -z "$TART_LOGDIR" ]]; then
+        WORKTRACE_LOGDIR="${1#*=}"
+        if [[ -z "$WORKTRACE_LOGDIR" ]]; then
           usage_error "missing value for --log-dir"
         fi
         ;;
       --)
         shift
-        TART_FORCE_ADD=1
-        TART_ARGS=("$@")
+        WORKTRACE_FORCE_ADD=1
+        WORKTRACE_ARGS=("$@")
         return 0
         ;;
       *)
@@ -459,18 +459,18 @@ parse_global_options() {
     shift
   done
 
-  TART_ARGS=("$@")
+  WORKTRACE_ARGS=("$@")
 }
 
 main() {
   parse_global_options "$@"
-  if ((${#TART_ARGS[@]} > 0)); then
-    set -- "${TART_ARGS[@]}"
+  if ((${#WORKTRACE_ARGS[@]} > 0)); then
+    set -- "${WORKTRACE_ARGS[@]}"
   else
     set --
   fi
 
-  if [[ "$TART_FORCE_ADD" == "1" ]]; then
+  if [[ "$WORKTRACE_FORCE_ADD" == "1" ]]; then
     cmd_add "$@"
     return 0
   fi

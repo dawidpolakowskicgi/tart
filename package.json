@@ -1,7 +1,7 @@
 {
-  "name": "tart",
+  "name": "cgi-worktrace",
   "version": "0.2.0",
-  "description": "Task Activity Reporting Tool",
+  "description": "CGI Worktrace CLI and desktop app",
   "license": "MIT",
   "main": "desktop/main.cjs",
   "scripts": {

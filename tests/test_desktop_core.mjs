@@ -6,8 +6,8 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const {
-  TartCoreError,
-  TartStore,
+  WorktraceCoreError,
+  WorktraceStore,
   defaultLogDir,
   escapeCsvCell,
   formatEntriesAsCsv,
@@ -18,13 +18,13 @@ const {
   weekStartForDate,
   weekStartForIsoWeek,
   sortWeekStartsDescending,
-} = require("../desktop/tart-core.cjs");
+} = require("../desktop/worktrace-core.cjs");
 
 let passCount = 0;
 let failCount = 0;
 
 async function withTempDir(fn) {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "tart-electron-test-"));
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "worktrace-electron-test-"));
 
   try {
     await fn(tempDir);
@@ -47,16 +47,16 @@ async function runTest(name, fn) {
   }
 }
 
-function assertThrowsTartError(fn, expectedMessage) {
-  assert.throws(fn, (error) => error instanceof TartCoreError && error.message.includes(expectedMessage));
+function assertThrowsWorktraceError(fn, expectedMessage) {
+  assert.throws(fn, (error) => error instanceof WorktraceCoreError && error.message.includes(expectedMessage));
 }
 
 await runTest("desktop week date helpers", () => {
   assert.equal(weekStartForDate("2026-04-30"), "2026-04-27");
   assert.equal(weekStartForIsoWeek("2026-W18"), "2026-04-27");
   assert.equal(weekStartForIsoWeek("2020-W53"), "2020-12-28");
-  assertThrowsTartError(() => weekStartForDate("2026-02-30"), "invalid date");
-  assertThrowsTartError(() => weekStartForIsoWeek("2021-W53"), "invalid ISO week");
+  assertThrowsWorktraceError(() => weekStartForDate("2026-02-30"), "invalid date");
+  assertThrowsWorktraceError(() => weekStartForIsoWeek("2021-W53"), "invalid ISO week");
 });
 
 await runTest("desktop log text helpers", () => {
@@ -100,12 +100,12 @@ await runTest("desktop sorts week starts descending", () => {
 });
 
 await runTest("desktop default log directory", () => {
-  assert.equal(defaultLogDir("/Users/example"), path.join("/Users/example", "Documents", "tart"));
+  assert.equal(defaultLogDir("/Users/example"), path.join("/Users/example", "Documents", "worktrace"));
 });
 
 await runTest("desktop store adds and reads entries", async () => {
   await withTempDir(async (tempDir) => {
-    const store = new TartStore({
+    const store = new WorktraceStore({
       logDir: tempDir,
       now: () => new Date(2026, 3, 30, 9, 15),
       today: "2026-04-30",
@@ -129,7 +129,7 @@ await runTest("desktop store adds and reads entries", async () => {
 
 await runTest("desktop store lists available weeks", async () => {
   await withTempDir(async (tempDir) => {
-    const store = new TartStore({ logDir: tempDir, today: "2026-04-30" });
+    const store = new WorktraceStore({ logDir: tempDir, today: "2026-04-30" });
     await fs.writeFile(path.join(tempDir, "2026-04-27.log"), "2026-04-29 previous\n");
     await fs.writeFile(path.join(tempDir, "2026-04-20.log"), "2026-04-20 older\n");
     await fs.writeFile(path.join(tempDir, "notes.txt"), "ignore me\n");
@@ -140,7 +140,7 @@ await runTest("desktop store lists available weeks", async () => {
 
 await runTest("desktop store saves raw weekly text", async () => {
   await withTempDir(async (tempDir) => {
-    const store = new TartStore({
+    const store = new WorktraceStore({
       logDir: tempDir,
       now: () => new Date(2026, 3, 30, 9, 15),
       today: "2026-04-30",
@@ -155,7 +155,7 @@ await runTest("desktop store saves raw weekly text", async () => {
 
 await runTest("desktop store rejects bad entries", async () => {
   await withTempDir(async (tempDir) => {
-    const store = new TartStore({ logDir: tempDir, today: "2026-04-30" });
+    const store = new WorktraceStore({ logDir: tempDir, today: "2026-04-30" });
 
     await assert.rejects(() => store.addEntry(""), /missing entry message/);
     await assert.rejects(() => store.addEntry("first\nsecond"), /single line/);

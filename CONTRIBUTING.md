@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve `tart`.
+Thanks for helping improve `CGI Worktrace`.
 
 ## Before you start
 

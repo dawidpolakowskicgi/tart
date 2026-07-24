@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `tart` will be documented in this file.
+All notable changes to `worktrace` will be documented in this file.
 
 ## Unreleased
 

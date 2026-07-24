@@ -1,7 +1,7 @@
 {
-  "name": "tart",
+  "name": "cgi-worktrace",
   "version": "0.1.0",
-  "description": "TART desktop starter generated from tart",
+  "description": "WORKTRACE desktop starter generated from CGI Worktrace",
   "license": "MIT",
   "main": "desktop/main.cjs",
   "scripts": {

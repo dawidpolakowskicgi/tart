@@ -23,6 +23,7 @@ function collectElements(documentRef) {
     entryInput: documentRef.querySelector("#entryInput"),
     entryDateInput: documentRef.querySelector("#entryDateInput"),
     entryTimeInput: documentRef.querySelector("#entryTimeInput"),
+    projectInput: documentRef.querySelector("#projectInput"),
     exportButtons: Array.from(documentRef.querySelectorAll(".export-button")),
     themeButton: documentRef.querySelector("#themeButton"),
     windowButtons: Array.from(documentRef.querySelectorAll(".window-controls__button")),
@@ -58,18 +59,24 @@ function formatWeekOptionLabel(weekStart) {
   return `${weekStart}`;
 }
 
-function buildEntryMessage(message, reference) {
+function buildEntryMessage(message, project, reference) {
   const cleanMessage = String(message || "").trim();
+  const cleanProject = String(project || "").trim();
   const cleanReference = String(reference || "").trim();
+  const segments = [cleanMessage];
 
-  if (!cleanReference) {
-    return cleanMessage;
+  if (cleanProject) {
+    segments.push(`[project: ${cleanProject}]`);
   }
 
-  return `${cleanMessage} [ref: ${cleanReference}]`;
+  if (cleanReference) {
+    segments.push(`[ref: ${cleanReference}]`);
+  }
+
+  return segments.join(" ");
 }
 
-function createTartRenderer({ document: documentRef, api, initialView = "week" }) {
+function createWorktraceRenderer({ document: documentRef, api, initialView = "week" }) {
   const elements = collectElements(documentRef);
   let currentState = null;
   let currentView = initialView;
@@ -117,6 +124,7 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
 
   function setBusy(isBusy) {
     elements.entryInput.disabled = isBusy;
+    elements.projectInput.disabled = isBusy;
     elements.referenceInput.disabled = isBusy;
     elements.entryDateInput.disabled = isBusy;
     elements.entryTimeInput.disabled = isBusy;
@@ -148,6 +156,7 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
     elements.entryDateInput.value = currentEditing.date;
     elements.entryTimeInput.value = currentEditing.time || "";
     elements.entryInput.value = currentEditing.message;
+    elements.projectInput.value = "";
     elements.referenceInput.value = "";
     elements.entrySubmitButton.textContent = "Save";
     scheduleWindowFit();
@@ -219,7 +228,7 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
 
     try {
       if (typeof window !== "undefined" && window.localStorage) {
-        window.localStorage.setItem("tart-theme", currentTheme);
+        window.localStorage.setItem("worktrace-theme", currentTheme);
       }
     } catch (_error) {
       // Ignore storage failures in restricted environments.
@@ -360,11 +369,18 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
     const message = elements.entryInput.value.trim();
     const date = elements.entryDateInput.value.trim();
     const time = elements.entryTimeInput.value.trim();
+    const project = elements.projectInput.value.trim();
     const reference = elements.referenceInput.value.trim();
 
     if (!message) {
       setStatus("Enter a log message.", "error");
       elements.entryInput.focus();
+      return;
+    }
+
+    if (project.includes("\n") || project.includes("\r")) {
+      setStatus("Task project must be a single line.", "error");
+      elements.projectInput.focus();
       return;
     }
 
@@ -383,16 +399,17 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
           currentEditing.line,
           date,
           time,
-          buildEntryMessage(message, reference),
+          buildEntryMessage(message, project, reference),
         ));
         setStatus("Entry updated.", "ok");
       } else {
-        renderState(await api.addEntry(buildEntryMessage(message, reference), time, date));
+        renderState(await api.addEntry(buildEntryMessage(message, project, reference), time, date));
         setStatus("Entry added.", "ok");
       }
       elements.entryInput.value = "";
       elements.entryDateInput.value = "";
       elements.entryTimeInput.value = "";
+      elements.projectInput.value = "";
       elements.referenceInput.value = "";
       setEditingEntry(null);
       showView("week");
@@ -523,11 +540,11 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
       button.addEventListener("click", async () => {
         const action = button.dataset.windowAction;
         if (action === "minimize") {
-          await window.tart.minimizeWindow();
+          await window.worktrace.minimizeWindow();
         } else if (action === "maximize") {
-          await window.tart.maximizeWindow();
+          await window.worktrace.maximizeWindow();
         } else if (action === "close") {
-          await window.tart.closeWindow();
+          await window.worktrace.closeWindow();
         }
       });
     }
@@ -537,7 +554,7 @@ function createTartRenderer({ document: documentRef, api, initialView = "week" }
     bindEvents();
     try {
       const storedTheme = typeof window !== "undefined" && window.localStorage
-        ? window.localStorage.getItem("tart-theme")
+        ? window.localStorage.getItem("worktrace-theme")
         : "dark";
       applyTheme(storedTheme || "dark");
     } catch (_error) {
@@ -587,14 +604,14 @@ if (typeof module !== "undefined") {
   module.exports = {
     buildEntryMessage,
     collectElements,
-    createTartRenderer,
+    createWorktraceRenderer,
     viewTitles,
   };
 }
 
-if (typeof window !== "undefined" && window.document && window.tart) {
-  createTartRenderer({
-    api: window.tart,
+if (typeof window !== "undefined" && window.document && window.worktrace) {
+  createWorktraceRenderer({
+    api: window.worktrace,
     document: window.document,
   }).start();
 }

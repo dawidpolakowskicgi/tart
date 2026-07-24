@@ -92,7 +92,7 @@ function createWindow() {
     height: 760,
     minWidth: 920,
     minHeight: 640,
-    title: "TART",
+    title: "WORKTRACE",
     backgroundColor: "#f5f4ef",
     icon: appIconPath(),
     show: false,
@@ -133,13 +133,13 @@ function createTray() {
   }
 
   tray = new Tray(trayIcon());
-  tray.setToolTip("TART");
+  tray.setToolTip("WORKTRACE");
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: "Show TART", click: showMainWindow },
+    { label: "Show WORKTRACE", click: showMainWindow },
     { label: "Open data directory", click: () => handleDesktopAction(openLogDirectory) },
     { type: "separator" },
     {
-      label: "Quit TART",
+      label: "Quit WORKTRACE",
       click: () => {
         isQuitting = true;
         app.quit();
@@ -222,7 +222,7 @@ async function exportWeek(formatValue) {
 
 app.whenReady().then(() => {
   if (process.platform === "win32") {
-    app.setAppUserModelId("com.tart.desktop");
+    app.setAppUserModelId("com.cgi.worktrace.desktop");
   }
 
   createStore();

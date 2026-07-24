@@ -8,7 +8,7 @@ fi
 
 readonly VERSION_TAG="$1"
 output_dir_arg="$2"
-readonly RELEASE_URL_BASE="https://github.com/dawidpolakowskicgi/worktrace/releases/download/${VERSION_TAG}"
+readonly RELEASE_URL_BASE="https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/download/${VERSION_TAG}"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
@@ -53,17 +53,17 @@ cp "${repo_root}/assets/worktrace-icon-key.png" "$package_root/assets/"
 chmod 0755 "$package_root/worktrace.sh" "$package_root/worktrace-desktop" "$package_root/scripts/install.sh" "$package_root/scripts/install-macos.sh"
 
 sed \
-  "s|https://raw.githubusercontent.com/dawidpolakowskicgi/worktrace/main/worktrace.sh|${RELEASE_URL_BASE}/worktrace.sh|g" \
+  "s|https://raw.githubusercontent.com/dawidpolakowskicgi/cgi-worktrace/main/worktrace.sh|${RELEASE_URL_BASE}/worktrace.sh|g" \
   "${repo_root}/scripts/install.sh" > "${OUTPUT_DIR}/install.sh"
 chmod 0755 "${OUTPUT_DIR}/install.sh"
 
 sed \
-  "s|https://github.com/dawidpolakowskicgi/worktrace/releases/latest/download/worktrace-macos.tar.gz|${RELEASE_URL_BASE}/worktrace-macos.tar.gz|g" \
+  "s|https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/worktrace-macos.tar.gz|${RELEASE_URL_BASE}/worktrace-macos.tar.gz|g" \
   "${repo_root}/scripts/install-macos.sh" > "${OUTPUT_DIR}/install-macos.sh"
 chmod 0755 "${OUTPUT_DIR}/install-macos.sh"
 
 sed \
-  "s|https://raw.githubusercontent.com/dawidpolakowskicgi/worktrace/main/worktrace.sh|${RELEASE_URL_BASE}/worktrace.sh|g" \
+  "s|https://raw.githubusercontent.com/dawidpolakowskicgi/cgi-worktrace/main/worktrace.sh|${RELEASE_URL_BASE}/worktrace.sh|g" \
   "${repo_root}/scripts/install.ps1" > "${OUTPUT_DIR}/install.ps1"
 
 cp "${repo_root}/worktrace.sh" "${OUTPUT_DIR}/worktrace.sh"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WORKTRACE_RAW_URL="${WORKTRACE_RAW_URL:-https://raw.githubusercontent.com/dawidpolakowskicgi/worktrace/main/worktrace.sh}"
+WORKTRACE_RAW_URL="${WORKTRACE_RAW_URL:-https://raw.githubusercontent.com/dawidpolakowskicgi/cgi-worktrace/main/worktrace.sh}"
 WORKTRACE_INSTALL_DIR="${WORKTRACE_INSTALL_DIR:-${HOME}/.local/bin}"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

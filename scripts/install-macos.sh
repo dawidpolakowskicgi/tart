@@ -9,7 +9,7 @@ fi
 WORKTRACE_INSTALL_DIR="${WORKTRACE_INSTALL_DIR:-${HOME}/.local/bin}"
 WORKTRACE_MACOS_APP_DIR="${WORKTRACE_MACOS_APP_DIR:-${HOME}/Applications}"
 WORKTRACE_MACOS_SUPPORT_DIR="${WORKTRACE_MACOS_SUPPORT_DIR:-${HOME}/Library/Application Support/worktrace}"
-WORKTRACE_MACOS_ARCHIVE_URL="${WORKTRACE_MACOS_ARCHIVE_URL:-https://github.com/dawidpolakowskicgi/worktrace/releases/latest/download/worktrace-macos.tar.gz}"
+WORKTRACE_MACOS_ARCHIVE_URL="${WORKTRACE_MACOS_ARCHIVE_URL:-https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/worktrace-macos.tar.gz}"
 WORKTRACE_SKIP_DESKTOP="${WORKTRACE_SKIP_DESKTOP:-0}"
 WORKTRACE_SKIP_NPM_INSTALL="${WORKTRACE_SKIP_NPM_INSTALL:-0}"
 

@@ -1,6 +1,6 @@
 param(
     [string]$InstallDir = "$env:LOCALAPPDATA\worktrace\bin",
-    [string]$SourceUrl = "https://raw.githubusercontent.com/dawidpolakowskicgi/worktrace/main/worktrace.sh",
+    [string]$SourceUrl = "https://raw.githubusercontent.com/dawidpolakowskicgi/cgi-worktrace/main/worktrace.sh",
     [switch]$NoPathUpdate
 )
 

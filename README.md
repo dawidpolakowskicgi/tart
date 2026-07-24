@@ -55,7 +55,7 @@ export PATH="$HOME/.local/bin:$PATH"
 It also installs the desktop app in:
 
 ```text
-~/Applications/CGI Worktrace.app
+~/Applications/worktrace.app
 ```
 
 The desktop app support files live in:

@@ -136,7 +136,7 @@ test_help_and_version() {
 
   run_worktrace "$TEST_TMPDIR" version
   assert_status 0 || return 1
-  assert_eq "worktrace 0.2.0" "$LAST_OUTPUT"
+  assert_eq "worktrace 0.3.0" "$LAST_OUTPUT"
 }
 
 test_command_help_aliases_are_consistent() {
@@ -259,7 +259,7 @@ test_legacy_week_aliases() {
 }
 
 test_config_uses_resolved_values() {
-  local expected="version=0.2.0
+  local expected="version=0.3.0
 log_dir=${TEST_TMPDIR}
 current_week=${TEST_WEEK_START}
 current_file=${TEST_TMPDIR}/${TEST_WEEK_START}.log"
@@ -366,11 +366,11 @@ test_macos_installer_smoke() {
   assert_file_nonempty "${bin_dir}/worktrace" || return 1
   assert_file_nonempty "${support_dir}/worktrace-desktop" || return 1
   assert_file_nonempty "${support_dir}/desktop/main.cjs" || return 1
-  assert_file_nonempty "${app_dir}/CGI Worktrace.app/Contents/MacOS/worktrace" || return 1
-  assert_file_nonempty "${app_dir}/CGI Worktrace.app/Contents/Info.plist" || return 1
-  assert_file_nonempty "${app_dir}/CGI Worktrace.app/Contents/Resources/worktrace-clock-icon.icns" || return 1
+  assert_file_nonempty "${app_dir}/worktrace.app/Contents/MacOS/worktrace" || return 1
+  assert_file_nonempty "${app_dir}/worktrace.app/Contents/Info.plist" || return 1
+  assert_file_nonempty "${app_dir}/worktrace.app/Contents/Resources/worktrace-clock-icon.icns" || return 1
 
-  assert_eq "worktrace 0.2.0" "$("${bin_dir}/worktrace" version)"
+  assert_eq "worktrace 0.3.0" "$("${bin_dir}/worktrace" version)"
 }
 
 run_test() {

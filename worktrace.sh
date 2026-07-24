@@ -9,7 +9,7 @@ set -euo pipefail
 # Each week is stored as: YYYY-MM-DD.log (the Monday of that ISO week)
 # Entry format: YYYY-MM-DD <message>
 
-readonly WORKTRACE_VERSION="0.2.0"
+readonly WORKTRACE_VERSION="0.3.0"
 WORKTRACE_LOGDIR="${WORKTRACE_LOGDIR:-${HOME}/Documents/worktrace}"
 WORKTRACE_ARGS=()
 WORKTRACE_FORCE_ADD=0

@@ -1,6 +1,6 @@
 param(
-    [string]$InstallDir = "$env:LOCALAPPDATA\tart\bin",
-    [string]$SourceUrl = "https://raw.githubusercontent.com/dawidpolakowskicgi/tart/main/tart.sh",
+    [string]$InstallDir = "$env:LOCALAPPDATA\worktrace\bin",
+    [string]$SourceUrl = "https://raw.githubusercontent.com/dawidpolakowskicgi/cgi-worktrace/main/worktrace.sh",
     [switch]$NoPathUpdate
 )
 
@@ -17,7 +17,7 @@ function Find-RepoSource {
         return $null
     }
 
-    $candidate = Join-Path $repoRoot "tart.sh"
+    $candidate = Join-Path $repoRoot "worktrace.sh"
 
     if (Test-Path -LiteralPath $candidate) {
         return $candidate
@@ -79,14 +79,14 @@ if (-not $InstallDir) {
 
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 
-$tartScript = Join-Path $InstallDir "tart.sh"
-$tartCmd = Join-Path $InstallDir "tart.cmd"
+$worktraceScript = Join-Path $InstallDir "worktrace.sh"
+$worktraceCmd = Join-Path $InstallDir "worktrace.cmd"
 $repoSource = Find-RepoSource
 
 if ($repoSource) {
-    Copy-Item -LiteralPath $repoSource -Destination $tartScript -Force
+    Copy-Item -LiteralPath $repoSource -Destination $worktraceScript -Force
 } else {
-    Invoke-WebRequest -Uri $SourceUrl -OutFile $tartScript
+    Invoke-WebRequest -Uri $SourceUrl -OutFile $worktraceScript
 }
 
 $cmdContent = @'
@@ -103,15 +103,15 @@ if not defined BASH_EXE if exist "%ProgramFiles(x86)%\Git\usr\bin\bash.exe" set 
 if not defined BASH_EXE where bash.exe >nul 2>nul && set "BASH_EXE=bash.exe"
 
 if not defined BASH_EXE (
-  echo tart requires Git Bash. Install Git for Windows, then open a new terminal.
+  echo worktrace requires Git Bash. Install Git for Windows, then open a new terminal.
   exit /b 1
 )
 
-"%BASH_EXE%" "%SCRIPT_DIR%tart.sh" %*
+"%BASH_EXE%" "%SCRIPT_DIR%worktrace.sh" %*
 exit /b %ERRORLEVEL%
 '@
 
-Set-Content -Path $tartCmd -Value $cmdContent -Encoding ASCII
+Set-Content -Path $worktraceCmd -Value $cmdContent -Encoding ASCII
 
 $pathUpdated = $false
 if (-not $NoPathUpdate) {
@@ -120,10 +120,10 @@ if (-not $NoPathUpdate) {
 
 $bashPath = Find-Bash
 
-Write-Host "Installed tart to $InstallDir"
+Write-Host "Installed worktrace to $InstallDir"
 
 if ($pathUpdated) {
-    Write-Host "Added $InstallDir to your user PATH. Open a new terminal before running tart."
+    Write-Host "Added $InstallDir to your user PATH. Open a new terminal before running worktrace."
 } elseif ($NoPathUpdate) {
     Write-Host "Skipped PATH update."
 } else {
@@ -132,7 +132,7 @@ if ($pathUpdated) {
 
 if ($bashPath) {
     Write-Host "Detected Bash: $bashPath"
-    Write-Host "Run: tart version"
+    Write-Host "Run: worktrace version"
 } else {
-    Write-Host "Git Bash was not detected. Install Git for Windows before running tart."
+    Write-Host "Git Bash was not detected. Install Git for Windows before running worktrace."
 }

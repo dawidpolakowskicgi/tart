@@ -1,10 +1,10 @@
-# tart
+# CGI Worktrace
 
-![CI](https://github.com/dawidpolakowskicgi/tart/actions/workflows/tests.yml/badge.svg)
-![Release](https://img.shields.io/github/v/release/dawidpolakowskicgi/tart)
-![License](https://img.shields.io/github/license/dawidpolakowskicgi/tart)
+![CI](https://github.com/dawidpolakowskicgi/cgi-worktrace/actions/workflows/tests.yml/badge.svg)
+![Release](https://img.shields.io/github/v/release/dawidpolakowskicgi/cgi-worktrace)
+![License](https://img.shields.io/github/license/dawidpolakowskicgi/cgi-worktrace)
 
-`tart` is a lightweight command-line tool for logging task activity.
+`CGI Worktrace` is a lightweight command-line tool and desktop app for logging task activity.
 
 It is open source under the MIT License.
 
@@ -19,9 +19,9 @@ It keeps the daily workflow fast, while presenting a more predictable CLI surfac
 
 ## Desktop App Screenshot
 
-![tart desktop app screenshot](./src/Screenshot.png)
+![CGI Worktrace desktop app screenshot](./src/Screenshot.png)
 
-The image above shows the current Electron desktop app layout for `tart`.
+The image above shows the current Electron desktop app layout for `CGI Worktrace`.
 It uses a full-width top chrome, a left workspace panel, separate date and time controls for new entries, week filtering, inline editing, copy/export actions, and row-level task actions.
 
 The desktop UI is also covered by automated renderer and core tests, so the screenshot stays in step with the app structure.
@@ -31,22 +31,22 @@ The desktop UI is also covered by automated renderer and core tests, so the scre
 ### Linux
 
 ```bash
-curl -fsSL https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install.sh | bash
+curl -fsSL https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/install.sh | bash
 ```
 
 ### macOS
 
 ```bash
-curl -fsSL https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install-macos.sh | bash
+curl -fsSL https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/install-macos.sh | bash
 ```
 
 The macOS installer puts the CLI in:
 
 ```text
-~/.local/bin/tart
+~/.local/bin/worktrace
 ```
 
-Add this to `~/.zshrc` or `~/.zprofile` if you want to run `tart` from any shell:
+Add this to `~/.zshrc` or `~/.zprofile` if you want to run `worktrace` from any shell:
 
 ```zsh
 export PATH="$HOME/.local/bin:$PATH"
@@ -55,13 +55,13 @@ export PATH="$HOME/.local/bin:$PATH"
 It also installs the desktop app in:
 
 ```text
-~/Applications/tart.app
+~/Applications/worktrace.app
 ```
 
-The desktop app files live in:
+The desktop app support files live in:
 
 ```text
-~/Library/Application Support/tart
+~/Library/Application Support/worktrace
 ```
 
 The desktop app needs Node.js and npm so the installer can install Electron dependencies. The CLI works without Node.js.
@@ -69,32 +69,32 @@ The desktop app needs Node.js and npm so the installer can install Electron depe
 Install from a local clone:
 
 ```bash
-git clone https://github.com/dawidpolakowskicgi/tart.git
-cd tart
+git clone https://github.com/dawidpolakowskicgi/cgi-worktrace.git
+cd worktrace
 ./scripts/install-macos.sh
 ```
 
 Choose another CLI install directory:
 
 ```bash
-TART_INSTALL_DIR="$HOME/bin" ./scripts/install-macos.sh
+WORKTRACE_INSTALL_DIR="$HOME/bin" ./scripts/install-macos.sh
 ```
 
 Choose another desktop app directory:
 
 ```bash
-TART_MACOS_APP_DIR="$HOME/Desktop" ./scripts/install-macos.sh
+WORKTRACE_MACOS_APP_DIR="$HOME/Desktop" ./scripts/install-macos.sh
 ```
 
 ### Linux Details
 
-The shell installer puts `tart` in:
+The shell installer puts `worktrace` in:
 
 ```text
-~/.local/bin/tart
+~/.local/bin/worktrace
 ```
 
-Add this to `~/.zshrc` or `~/.zprofile` if you want to run `tart` from any shell:
+Add this to `~/.zshrc` or `~/.zprofile` if you want to run `worktrace` from any shell:
 
 ```zsh
 export PATH="$HOME/.local/bin:$PATH"
@@ -105,50 +105,50 @@ If `~/.local/bin` is not already in your `PATH`, the installer prints the exact 
 If you want a simple desktop launcher alias in zsh, add:
 
 ```zsh
-alias tart-desktop='cd /Users/dawidpolakowski/Git/work/tart && npm run desktop'
+alias worktrace-desktop='cd /path/to/worktrace && npm run desktop'
 ```
 
 Install from a local clone:
 
 ```bash
-git clone https://github.com/dawidpolakowskicgi/tart.git
-cd tart
+git clone https://github.com/dawidpolakowskicgi/cgi-worktrace.git
+cd worktrace
 ./scripts/install.sh
 ```
 
 Choose another install directory:
 
 ```bash
-TART_INSTALL_DIR="$HOME/bin" ./scripts/install.sh
+WORKTRACE_INSTALL_DIR="$HOME/bin" ./scripts/install.sh
 ```
 
 ### Windows
 
-Install Git for Windows first, because `tart` runs through Git Bash on Windows.
+Install Git for Windows first, because `worktrace` runs through Git Bash on Windows.
 
 Then run this in PowerShell:
 
 ```powershell
-irm https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install.ps1 | iex
+irm https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/install.ps1 | iex
 ```
 
-The installer puts `tart` in:
+The installer puts `worktrace` in:
 
 ```text
-%LOCALAPPDATA%\tart\bin
+%LOCALAPPDATA%\worktrace\bin
 ```
 
 It also adds that directory to your user `PATH`. Open a new terminal after installation, then run:
 
 ```powershell
-tart version
+worktrace version
 ```
 
 Install from a local clone:
 
 ```powershell
-git clone https://github.com/dawidpolakowskicgi/tart.git
-cd tart
+git clone https://github.com/dawidpolakowskicgi/cgi-worktrace.git
+cd worktrace
 powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1
 ```
 
@@ -156,12 +156,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1
 
 Latest release assets:
 
-* [Shell installer](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install.sh)
-* [macOS installer](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install-macos.sh)
-* [PowerShell installer](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/install.ps1)
-* [Linux archive](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/tart-linux.tar.gz)
-* [macOS archive](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/tart-macos.tar.gz)
-* [Windows archive](https://github.com/dawidpolakowskicgi/tart/releases/latest/download/tart-windows.zip)
+* [Shell installer](https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/install.sh)
+* [macOS installer](https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/install-macos.sh)
+* [PowerShell installer](https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/install.ps1)
+* [Linux archive](https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/worktrace-linux.tar.gz)
+* [macOS archive](https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/worktrace-macos.tar.gz)
+* [Windows archive](https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/worktrace-windows.zip)
 
 The release archives include the CLI, the Electron desktop app source, installer scripts, and launcher assets.
 
@@ -173,7 +173,7 @@ The release archives include the CLI, the Electron desktop app source, installer
 
 ## Project Base
 
-Create a new Electron desktop project scaffold based on `tart`:
+Create a new Electron desktop project scaffold based on `worktrace`:
 
 ```bash
 ./scripts/create-project-base.sh "Focus Journal"
@@ -192,7 +192,7 @@ The generated base includes:
 * Electron main, preload, renderer, HTML, and CSS files
 * tray or menu-bar behavior
 * a weekly file-backed activity store under `~/Documents/<project-slug>`
-* starter icons copied from this repo
+* starter icons copied from CGI Worktrace
 * a minimal `package.json`, `.gitignore`, and README
 * `electron` as the only starter dev dependency
 
@@ -211,47 +211,47 @@ You can also use the generated `README.md` inside the scaffold as a quick checkl
 Show the current week's log:
 
 ```bash
-tart
-tart list
+worktrace
+worktrace list
 ```
 
 Add a task entry:
 
 ```bash
-tart add "implemented login feature"
+worktrace add "implemented login feature"
 ```
 
 Quick logging is still supported:
 
 ```bash
-tart "implemented login feature"
+worktrace "implemented login feature"
 ```
 
 Show today's entries:
 
 ```bash
-tart today
-tart --today
+worktrace today
+worktrace --today
 ```
 
 Show a specific week:
 
 ```bash
-tart week 2026-04-30
-tart list --week 2026-W18
+worktrace week 2026-04-30
+worktrace list --week 2026-W18
 ```
 
 Print the resolved log path:
 
 ```bash
-tart path
-tart path 2026-W18
+worktrace path
+worktrace path 2026-W18
 ```
 
 Show configuration:
 
 ```bash
-tart config
+worktrace config
 ```
 
 ## Desktop Launcher
@@ -267,13 +267,13 @@ Run the Electron desktop app:
 ```bash
 npm run desktop
 # or
-./tart-desktop
+./worktrace-desktop
 ```
 
 The desktop app provides:
 
 ```text
-Add entry with date, time, and optional ticket or link reference
+Add entry with date, time, optional task project, and optional ticket or link reference
 Week, today, and raw weekly editor views
 Week filtering with selectable week, from, and to fields
 Export week as TXT, CSV, or PDF
@@ -283,8 +283,8 @@ Open log directory
 Notes:
 
 * it uses the same file format as the CLI
-* it reads `TART_LOGDIR` when set
-* it stores logs in `~/Documents/tart` by default
+* it reads `WORKTRACE_LOGDIR` when set
+* it stores logs in `~/Documents/worktrace` by default
 * it keeps a tray or menu bar icon active, and minimize or close hides the window there
 * use the tray menu to show the app, open the log directory, or quit
 * it requires Node.js and Electron dependencies installed with `npm install`
@@ -308,23 +308,23 @@ npm run icons
 ## Commands
 
 ```text
-tart add <message...>             Add a task entry for today
-tart list [--week <ref>]          Show entries for a week
-tart today                        Show today's entries
-tart week [<ref>]                 Show entries for the week containing <ref>
-tart path [<ref>]                 Print the log file path for a week
-tart init                         Create the log directory
-tart config                       Show resolved configuration
-tart version                      Show version
-tart help                         Show help
+worktrace add <message...>             Add a task entry for today
+worktrace list [--week <ref>]          Show entries for a week
+worktrace today                        Show today's entries
+worktrace week [<ref>]                 Show entries for the week containing <ref>
+worktrace path [<ref>]                 Print the log file path for a week
+worktrace init                         Create the log directory
+worktrace config                       Show resolved configuration
+worktrace version                      Show version
+worktrace help                         Show help
 ```
 
 Legacy aliases are still available:
 
 ```text
-tart -t | --today
-tart -tw | --this-week
-tart --week <ref>
+worktrace -t | --today
+worktrace -tw | --this-week
+worktrace --week <ref>
 ```
 
 ## Week References
@@ -336,13 +336,13 @@ YYYY-MM-DD
 YYYY-Www
 ```
 
-Date references can be any date in the target week. `tart` resolves them to the Monday log file for that ISO week.
+Date references can be any date in the target week. `worktrace` resolves them to the Monday log file for that ISO week.
 
 Examples:
 
 ```bash
-tart week 2026-04-30
-tart week 2026-W18
+worktrace week 2026-04-30
+worktrace week 2026-W18
 ```
 
 Both resolve to:
@@ -356,19 +356,19 @@ Both resolve to:
 Default log directory:
 
 ```bash
-~/Documents/tart
+~/Documents/worktrace
 ```
 
 Override it for your shell:
 
 ```bash
-export TART_LOGDIR="$HOME/somewhere/tart"
+export WORKTRACE_LOGDIR="$HOME/somewhere/worktrace"
 ```
 
 Override it for one command:
 
 ```bash
-tart --log-dir "$HOME/tmp/tart" add "tested release candidate"
+worktrace --log-dir "$HOME/tmp/worktrace" add "tested release candidate"
 ```
 
 ## Data Format
@@ -379,7 +379,7 @@ Each week is stored in its own file, named after the Monday of that week:
 2026-04-27.log
 ```
 
-Entries are plain text:
+Entries are plain text. CLI entries are date-based, and desktop entries include time when present:
 
 ```text
 YYYY-MM-DD <message>
@@ -401,10 +401,10 @@ Run the test suite:
 npm test
 ```
 
-The tests include Bash CLI regression tests and Node tests for the Electron desktop core. They use isolated temporary log directories and pin the current date with `TART_TODAY`.
+The tests include Bash CLI regression tests and Node tests for the Electron desktop core. They use isolated temporary log directories and pin the current date with `WORKTRACE_TODAY`.
 
 ## Philosophy
 
-`tart` tracks what you did, not how long it took.
+`CGI Worktrace` tracks what you did, not how long it took.
 
 It is intentionally small, dependency-free, and easy to inspect, but the command surface is structured enough to feel reliable in day-to-day professional use.

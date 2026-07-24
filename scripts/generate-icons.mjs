@@ -6,9 +6,9 @@ import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const sourcePng = path.join(rootDir, "assets", "tart-clock-icon.png");
-const macIcon = path.join(rootDir, "assets", "tart-clock-icon.icns");
-const windowsIcon = path.join(rootDir, "assets", "tart-clock-icon.ico");
+const sourcePng = path.join(rootDir, "assets", "worktrace-clock-icon.png");
+const macIcon = path.join(rootDir, "assets", "worktrace-clock-icon.icns");
+const windowsIcon = path.join(rootDir, "assets", "worktrace-clock-icon.ico");
 
 const icnsEntries = [
   ["icp4", 16],
@@ -296,7 +296,7 @@ function generateWindowsIcon(tempDir) {
 function main() {
   ensureSourceExists();
 
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "tart-icons-"));
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "worktrace-icons-"));
 
   try {
     generateMacIcon(tempDir);

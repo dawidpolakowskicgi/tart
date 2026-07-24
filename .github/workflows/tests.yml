@@ -34,8 +34,8 @@ jobs:
       - name: Check shell syntax
         shell: bash
         run: |
-          bash -n tart.sh
-          bash -n tart-desktop
+          bash -n worktrace.sh
+          bash -n worktrace-desktop
           bash -n tests/run.sh
           bash -n scripts/create-project-base.sh
           bash -n scripts/install.sh
@@ -45,7 +45,7 @@ jobs:
           node --check desktop/main.cjs
           node --check desktop/preload.cjs
           node --check desktop/renderer.cjs
-          node --check desktop/tart-core.cjs
+          node --check desktop/worktrace-core.cjs
           node --check tests/test_desktop_core.mjs
           node --check tests/test_desktop_renderer.mjs
 
@@ -68,8 +68,8 @@ jobs:
         shell: bash
         run: |
           install_dir="$(mktemp -d)"
-          TART_INSTALL_DIR="$install_dir" ./scripts/install.sh
-          "$install_dir/tart" version
+          WORKTRACE_INSTALL_DIR="$install_dir" ./scripts/install.sh
+          "$install_dir/worktrace" version
 
       - name: Smoke test release packager
         if: runner.os == 'Linux'
@@ -80,20 +80,20 @@ jobs:
           test -f "$output_dir/install.sh"
           test -f "$output_dir/install-macos.sh"
           test -f "$output_dir/install.ps1"
-          test -f "$output_dir/tart.sh"
-          test -f "$output_dir/tart-linux.tar.gz"
-          test -f "$output_dir/tart-macos.tar.gz"
-          test -f "$output_dir/tart-windows.zip"
+          test -f "$output_dir/worktrace.sh"
+          test -f "$output_dir/worktrace-linux.tar.gz"
+          test -f "$output_dir/worktrace-macos.tar.gz"
+          test -f "$output_dir/worktrace-windows.zip"
           test -f "$output_dir/SHA256SUMS.txt"
           archive_listing="$(mktemp)"
-          tar -tzf "$output_dir/tart-linux.tar.gz" > "$archive_listing"
+          tar -tzf "$output_dir/worktrace-linux.tar.gz" > "$archive_listing"
           grep -q "/package.json" "$archive_listing"
           grep -q "/scripts/install-macos.sh" "$archive_listing"
           grep -q "/desktop/main.cjs" "$archive_listing"
           grep -q "/desktop/index.html" "$archive_listing"
-          grep -q "/assets/tart-clock-icon.icns" "$archive_listing"
-          grep -q "/assets/tart-clock-icon.ico" "$archive_listing"
-          grep -q "/assets/tart-clock-icon.png" "$archive_listing"
+          grep -q "/assets/worktrace-clock-icon.icns" "$archive_listing"
+          grep -q "/assets/worktrace-clock-icon.ico" "$archive_listing"
+          grep -q "/assets/worktrace-clock-icon.png" "$archive_listing"
 
   windows-installer:
     name: Windows Installer
@@ -103,9 +103,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install tart
+      - name: Install worktrace
         shell: pwsh
         run: |
-          $installDir = Join-Path $env:RUNNER_TEMP "tart-bin"
+          $installDir = Join-Path $env:RUNNER_TEMP "worktrace-bin"
           ./scripts/install.ps1 -InstallDir $installDir -NoPathUpdate
-          & (Join-Path $installDir "tart.cmd") version
+          & (Join-Path $installDir "worktrace.cmd") version

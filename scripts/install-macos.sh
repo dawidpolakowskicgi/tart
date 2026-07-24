@@ -2,16 +2,16 @@
 set -euo pipefail
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
-  printf 'tart macOS installer must be run on macOS.\n' >&2
+  printf 'worktrace macOS installer must be run on macOS.\n' >&2
   exit 2
 fi
 
-TART_INSTALL_DIR="${TART_INSTALL_DIR:-${HOME}/.local/bin}"
-TART_MACOS_APP_DIR="${TART_MACOS_APP_DIR:-${HOME}/Applications}"
-TART_MACOS_SUPPORT_DIR="${TART_MACOS_SUPPORT_DIR:-${HOME}/Library/Application Support/tart}"
-TART_MACOS_ARCHIVE_URL="${TART_MACOS_ARCHIVE_URL:-https://github.com/dawidpolakowskicgi/tart/releases/latest/download/tart-macos.tar.gz}"
-TART_SKIP_DESKTOP="${TART_SKIP_DESKTOP:-0}"
-TART_SKIP_NPM_INSTALL="${TART_SKIP_NPM_INSTALL:-0}"
+WORKTRACE_INSTALL_DIR="${WORKTRACE_INSTALL_DIR:-${HOME}/.local/bin}"
+WORKTRACE_MACOS_APP_DIR="${WORKTRACE_MACOS_APP_DIR:-${HOME}/Applications}"
+WORKTRACE_MACOS_SUPPORT_DIR="${WORKTRACE_MACOS_SUPPORT_DIR:-${HOME}/Library/Application Support/worktrace}"
+WORKTRACE_MACOS_ARCHIVE_URL="${WORKTRACE_MACOS_ARCHIVE_URL:-https://github.com/dawidpolakowskicgi/cgi-worktrace/releases/latest/download/worktrace-macos.tar.gz}"
+WORKTRACE_SKIP_DESKTOP="${WORKTRACE_SKIP_DESKTOP:-0}"
+WORKTRACE_SKIP_NPM_INSTALL="${WORKTRACE_SKIP_NPM_INSTALL:-0}"
 
 script_dir="$(pwd)"
 if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
@@ -44,27 +44,27 @@ download_file() {
     return
   fi
 
-  printf 'tart macOS installer: curl or wget is required.\n' >&2
+  printf 'worktrace macOS installer: curl or wget is required.\n' >&2
   exit 1
 }
 
 local_package_available() {
-  [[ -f "${repo_root}/tart.sh" && -f "${repo_root}/package.json" && -d "${repo_root}/desktop" ]]
+  [[ -f "${repo_root}/worktrace.sh" && -f "${repo_root}/package.json" && -d "${repo_root}/desktop" ]]
 }
 
 download_release_package() {
   local archive extracted
 
   stage_dir="$(mktemp -d)"
-  archive="${stage_dir}/tart-macos.tar.gz"
+  archive="${stage_dir}/worktrace-macos.tar.gz"
 
-  printf 'Downloading tart macOS package...\n'
-  download_file "$TART_MACOS_ARCHIVE_URL" "$archive"
+  printf 'Downloading worktrace macOS package...\n'
+  download_file "$WORKTRACE_MACOS_ARCHIVE_URL" "$archive"
   tar -xzf "$archive" -C "$stage_dir"
 
-  extracted="$(find "$stage_dir" -mindepth 1 -maxdepth 1 -type d -name 'tart-*' -print | head -n 1)"
+  extracted="$(find "$stage_dir" -mindepth 1 -maxdepth 1 -type d -name 'worktrace-*' -print | head -n 1)"
   if [[ -z "$extracted" || ! -d "$extracted" ]]; then
-    printf 'tart macOS installer: release archive did not contain a tart package.\n' >&2
+    printf 'worktrace macOS installer: release archive did not contain a worktrace package.\n' >&2
     exit 1
   fi
 
@@ -81,9 +81,9 @@ resolve_package_source() {
 }
 
 install_cli() {
-  mkdir -p "$TART_INSTALL_DIR"
-  cp "${package_source}/tart.sh" "${TART_INSTALL_DIR}/tart"
-  chmod 0755 "${TART_INSTALL_DIR}/tart"
+  mkdir -p "$WORKTRACE_INSTALL_DIR"
+  cp "${package_source}/worktrace.sh" "${WORKTRACE_INSTALL_DIR}/worktrace"
+  chmod 0755 "${WORKTRACE_INSTALL_DIR}/worktrace"
 }
 
 copy_file_if_exists() {
@@ -104,36 +104,36 @@ copy_dir() {
 }
 
 install_desktop_files() {
-  mkdir -p "$TART_MACOS_SUPPORT_DIR"
+  mkdir -p "$WORKTRACE_MACOS_SUPPORT_DIR"
 
-  copy_file_if_exists "${package_source}/README.md" "$TART_MACOS_SUPPORT_DIR/"
-  copy_file_if_exists "${package_source}/package.json" "$TART_MACOS_SUPPORT_DIR/"
-  copy_file_if_exists "${package_source}/package-lock.json" "$TART_MACOS_SUPPORT_DIR/"
-  cp "${package_source}/tart.sh" "$TART_MACOS_SUPPORT_DIR/"
-  cp "${package_source}/tart-desktop" "$TART_MACOS_SUPPORT_DIR/"
-  copy_dir "${package_source}/assets" "${TART_MACOS_SUPPORT_DIR}/assets"
-  copy_dir "${package_source}/desktop" "${TART_MACOS_SUPPORT_DIR}/desktop"
+  copy_file_if_exists "${package_source}/README.md" "$WORKTRACE_MACOS_SUPPORT_DIR/"
+  copy_file_if_exists "${package_source}/package.json" "$WORKTRACE_MACOS_SUPPORT_DIR/"
+  copy_file_if_exists "${package_source}/package-lock.json" "$WORKTRACE_MACOS_SUPPORT_DIR/"
+  cp "${package_source}/worktrace.sh" "$WORKTRACE_MACOS_SUPPORT_DIR/"
+  cp "${package_source}/worktrace-desktop" "$WORKTRACE_MACOS_SUPPORT_DIR/"
+  copy_dir "${package_source}/assets" "${WORKTRACE_MACOS_SUPPORT_DIR}/assets"
+  copy_dir "${package_source}/desktop" "${WORKTRACE_MACOS_SUPPORT_DIR}/desktop"
 
-  chmod 0755 "${TART_MACOS_SUPPORT_DIR}/tart.sh" "${TART_MACOS_SUPPORT_DIR}/tart-desktop"
+  chmod 0755 "${WORKTRACE_MACOS_SUPPORT_DIR}/worktrace.sh" "${WORKTRACE_MACOS_SUPPORT_DIR}/worktrace-desktop"
 }
 
 install_desktop_dependencies() {
-  if [[ "$TART_SKIP_NPM_INSTALL" == "1" ]]; then
-    printf 'Skipped desktop dependency install because TART_SKIP_NPM_INSTALL=1.\n'
+  if [[ "$WORKTRACE_SKIP_NPM_INSTALL" == "1" ]]; then
+    printf 'Skipped desktop dependency install because WORKTRACE_SKIP_NPM_INSTALL=1.\n'
     return
   fi
 
   if ! command -v npm >/dev/null 2>&1; then
     printf 'npm was not found. The CLI is installed, but the desktop app needs Node.js and npm.\n' >&2
-    printf 'After installing Node.js, run: cd "%s" && npm install\n' "$TART_MACOS_SUPPORT_DIR" >&2
+    printf 'After installing Node.js, run: cd "%s" && npm install\n' "$WORKTRACE_MACOS_SUPPORT_DIR" >&2
     return
   fi
 
   printf 'Installing desktop dependencies...\n'
-  if [[ -f "${TART_MACOS_SUPPORT_DIR}/package-lock.json" ]]; then
-    (cd "$TART_MACOS_SUPPORT_DIR" && npm ci)
+  if [[ -f "${WORKTRACE_MACOS_SUPPORT_DIR}/package-lock.json" ]]; then
+    (cd "$WORKTRACE_MACOS_SUPPORT_DIR" && npm ci)
   else
-    (cd "$TART_MACOS_SUPPORT_DIR" && npm install)
+    (cd "$WORKTRACE_MACOS_SUPPORT_DIR" && npm install)
   fi
 }
 
@@ -144,8 +144,8 @@ write_app_launcher() {
     printf '#!/usr/bin/env bash\n'
     printf 'set -euo pipefail\n'
     printf 'export PATH="/opt/homebrew/bin:/usr/local/bin:${PATH}"\n'
-    printf 'TART_SUPPORT_DIR=%q\n' "$TART_MACOS_SUPPORT_DIR"
-    printf 'exec "${TART_SUPPORT_DIR}/tart-desktop" "$@"\n'
+    printf 'WORKTRACE_SUPPORT_DIR=%q\n' "$WORKTRACE_MACOS_SUPPORT_DIR"
+    printf 'exec "${WORKTRACE_SUPPORT_DIR}/worktrace-desktop" "$@"\n'
   } > "$launcher"
   chmod 0755 "$launcher"
 }
@@ -161,21 +161,21 @@ write_info_plist() {
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
-  <string>tart</string>
+  <string>worktrace</string>
   <key>CFBundleExecutable</key>
-  <string>tart</string>
+  <string>worktrace</string>
   <key>CFBundleIconFile</key>
-  <string>tart-clock-icon</string>
+  <string>worktrace-clock-icon</string>
   <key>CFBundleIdentifier</key>
-  <string>com.tart.desktop</string>
+  <string>com.cgi.worktrace.desktop</string>
   <key>CFBundleName</key>
-  <string>tart</string>
+  <string>worktrace</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.2.0</string>
+  <string>0.3.0</string>
   <key>CFBundleVersion</key>
-  <string>0.2.0</string>
+  <string>0.3.0</string>
   <key>LSMinimumSystemVersion</key>
   <string>11.0</string>
   <key>NSHighResolutionCapable</key>
@@ -186,48 +186,48 @@ PLIST
 }
 
 create_app_bundle() {
-  local app_bundle="${TART_MACOS_APP_DIR}/tart.app"
+  local app_bundle="${WORKTRACE_MACOS_APP_DIR}/worktrace.app"
   local contents="${app_bundle}/Contents"
 
   mkdir -p "${contents}/MacOS" "${contents}/Resources"
-  write_app_launcher "${contents}/MacOS/tart"
+  write_app_launcher "${contents}/MacOS/worktrace"
   write_info_plist "${contents}/Info.plist"
 
-  if [[ -f "${TART_MACOS_SUPPORT_DIR}/assets/tart-clock-icon.icns" ]]; then
-    cp "${TART_MACOS_SUPPORT_DIR}/assets/tart-clock-icon.icns" "${contents}/Resources/tart-clock-icon.icns"
+  if [[ -f "${WORKTRACE_MACOS_SUPPORT_DIR}/assets/worktrace-clock-icon.icns" ]]; then
+    cp "${WORKTRACE_MACOS_SUPPORT_DIR}/assets/worktrace-clock-icon.icns" "${contents}/Resources/worktrace-clock-icon.icns"
   fi
 }
 
 path_contains_install_dir() {
   case ":${PATH}:" in
-    *":${TART_INSTALL_DIR}:"*) return 0 ;;
+    *":${WORKTRACE_INSTALL_DIR}:"*) return 0 ;;
     *) return 1 ;;
   esac
 }
 
 print_next_steps() {
-  printf '\nInstalled tart CLI to %s\n' "${TART_INSTALL_DIR}/tart"
+  printf '\nInstalled worktrace CLI to %s\n' "${WORKTRACE_INSTALL_DIR}/worktrace"
 
   if ! path_contains_install_dir; then
-    printf '\n%s is not currently in your PATH.\n' "$TART_INSTALL_DIR"
+    printf '\n%s is not currently in your PATH.\n' "$WORKTRACE_INSTALL_DIR"
     printf 'Add this to your shell profile, then open a new terminal:\n\n'
-    printf '  export PATH="%s:$PATH"\n' "$TART_INSTALL_DIR"
+    printf '  export PATH="%s:$PATH"\n' "$WORKTRACE_INSTALL_DIR"
   fi
 
-  if [[ "$TART_SKIP_DESKTOP" != "1" ]]; then
-    printf '\nInstalled tart desktop app to %s\n' "${TART_MACOS_APP_DIR}/tart.app"
+  if [[ "$WORKTRACE_SKIP_DESKTOP" != "1" ]]; then
+    printf '\nInstalled worktrace desktop app to %s\n' "${WORKTRACE_MACOS_APP_DIR}/worktrace.app"
     printf 'Open it from Finder, or run:\n\n'
-    printf '  open "%s"\n' "${TART_MACOS_APP_DIR}/tart.app"
+    printf '  open "%s"\n' "${WORKTRACE_MACOS_APP_DIR}/worktrace.app"
   fi
 
   printf '\nCheck the CLI with:\n\n'
-  printf '  tart version\n'
+  printf '  worktrace version\n'
 }
 
 resolve_package_source
 install_cli
 
-if [[ "$TART_SKIP_DESKTOP" != "1" ]]; then
+if [[ "$WORKTRACE_SKIP_DESKTOP" != "1" ]]; then
   install_desktop_files
   install_desktop_dependencies
   create_app_bundle

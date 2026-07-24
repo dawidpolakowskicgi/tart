@@ -3,8 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { TartStore } from "../desktop/tart-core.cjs";
+import { fileURLToPath } from "node:url";
+import { WorktraceStore } from "../desktop/worktrace-core.cjs";
 
 const execFileAsync = promisify(execFile);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -19,16 +19,12 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
-function chromeBinaryPath() {
-  const candidates = [
-    process.env.TART_CHROME_BIN,
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    path.join(os.homedir(), "Applications", "Google Chrome.app", "Contents", "MacOS", "Google Chrome"),
-    path.join(os.homedir(), "Applications", "Chromium.app", "Contents", "MacOS", "Chromium"),
-  ].filter(Boolean);
+function electronBinaryPath() {
+  const localBinary = process.platform === "win32"
+    ? path.join(repoRoot, "node_modules", ".bin", "electron.cmd")
+    : path.join(repoRoot, "node_modules", ".bin", "electron");
 
-  return candidates[0];
+  return localBinary;
 }
 
 function renderEntry(entry) {
@@ -53,7 +49,7 @@ function buildScreenshotHtml(state) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>tart desktop screenshot</title>
+    <title>worktrace desktop screenshot</title>
     <style>
       :root {
         --bg: #eff3f8;
@@ -61,7 +57,7 @@ function buildScreenshotHtml(state) {
         --line: #d6dce6;
         --text: #1f2937;
         --muted: #687387;
-        --blue: #2563eb;
+        --accent: #e3262d;
         --danger: #c2410c;
         --shadow: 0 18px 40px rgba(15, 23, 42, 0.09);
       }
@@ -72,7 +68,7 @@ function buildScreenshotHtml(state) {
         font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
         color: var(--text);
         background:
-          radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 26%),
+          radial-gradient(circle at top left, rgba(227, 38, 45, 0.08), transparent 26%),
           radial-gradient(circle at bottom right, rgba(226, 50, 45, 0.08), transparent 20%),
           linear-gradient(180deg, #f7f9fc 0%, var(--bg) 100%);
       }
@@ -194,7 +190,7 @@ function buildScreenshotHtml(state) {
         font-size: 18px;
       }
       .tab.active {
-        color: var(--blue);
+        color: var(--accent);
         font-weight: 700;
         background: rgba(255,255,255,0.82);
       }
@@ -256,18 +252,18 @@ function buildScreenshotHtml(state) {
       .form-panel {
         padding: 18px;
         display: grid;
-        grid-template-columns: 170px 150px 1.5fr 1fr 170px;
+        grid-template-columns: 170px 150px 1.2fr 220px 1fr 170px;
         gap: 16px;
         align-items: center;
       }
       .button-primary {
         min-height: 58px;
         border: none;
-        background: linear-gradient(180deg, #2f64c8 0%, #214da8 100%);
+        background: linear-gradient(180deg, #f04c53 0%, #cf252c 100%);
         color: white;
         font-size: 24px;
         font-weight: 700;
-        box-shadow: 0 10px 18px rgba(33, 77, 168, 0.24);
+        box-shadow: 0 10px 18px rgba(207, 37, 44, 0.24);
       }
       .section-head {
         display: flex;
@@ -301,7 +297,7 @@ function buildScreenshotHtml(state) {
       }
       .entry__date {
         font: 700 18px/1.2 "SF Mono", "JetBrains Mono", monospace;
-        color: var(--blue);
+        color: var(--accent);
       }
       .entry__message {
         font: 500 17px/1.45 "SF Mono", "JetBrains Mono", monospace;
@@ -336,7 +332,7 @@ function buildScreenshotHtml(state) {
         <div class="brand">
           <div class="brand__logo">CGI</div>
           <div class="brand__title">
-            <div class="brand__name">tart</div>
+            <div class="brand__name">worktrace</div>
             <div class="brand__week">Week of ${escapeHtml(state.week.weekStart)}</div>
           </div>
         </div>
@@ -387,12 +383,13 @@ function buildScreenshotHtml(state) {
           </section>
         </aside>
         <main class="main">
-          <p class="eyebrow">Task Activity Reporting Tool</p>
+          <p class="eyebrow">worktrace</p>
           <h1 class="view-title">This week</h1>
           <section class="form-panel">
             <div class="input">2026-07-23</div>
             <div class="input">08:30</div>
             <div class="input">Add activity text to log</div>
+            <div class="input">Task project</div>
             <div class="input">Ticket or link</div>
             <button class="button-primary">+ Add</button>
           </section>
@@ -414,19 +411,22 @@ function buildScreenshotHtml(state) {
 }
 
 async function main() {
-  const chromePath = chromeBinaryPath();
-  if (!chromePath) {
-    throw new Error("Chrome binary was not found. Set TART_CHROME_BIN to run screenshot generation.");
+  const electronPath = electronBinaryPath();
+  try {
+    await fs.access(electronPath);
+  } catch {
+    throw new Error("Electron binary was not found. Run npm install before generating the desktop screenshot.");
   }
 
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "tart-screenshot-"));
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "worktrace-screenshot-"));
   const logDir = path.join(tempDir, "logs");
   const htmlPath = path.join(tempDir, "screenshot.html");
+  const runnerPath = path.join(tempDir, "capture-screenshot.cjs");
   await fs.mkdir(logDir, { recursive: true });
   await fs.copyFile(fixturePath, path.join(logDir, "2026-07-21.log"));
 
-  const store = new TartStore({
-    env: { TART_LOGDIR: logDir, TART_TODAY: "2026-07-23" },
+  const store = new WorktraceStore({
+    env: { WORKTRACE_LOGDIR: logDir, WORKTRACE_TODAY: "2026-07-23" },
     logDir,
     today: "2026-07-23",
     now: () => new Date("2026-07-23T08:30:00"),
@@ -434,15 +434,45 @@ async function main() {
 
   const state = await store.getState("2026-07-21");
   await fs.writeFile(htmlPath, buildScreenshotHtml(state));
+  await fs.writeFile(runnerPath, `
+const fs = require("node:fs");
+const { pathToFileURL } = require("node:url");
+const { app, BrowserWindow } = require("electron");
 
-  await execFileAsync(chromePath, [
-    "--headless=new",
-    "--disable-gpu",
-    "--hide-scrollbars",
-    "--window-size=1600,900",
-    `--screenshot=${screenshotPath}`,
-    pathToFileURL(htmlPath).href,
-  ]);
+const htmlPath = process.argv[2];
+const screenshotPath = process.argv[3];
+
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch("disable-gpu");
+
+async function run() {
+  const win = new BrowserWindow({
+    width: 1600,
+    height: 900,
+    show: false,
+    backgroundColor: "#f7f9fc",
+    webPreferences: {
+      sandbox: true,
+    },
+  });
+
+  await win.loadURL(pathToFileURL(htmlPath).href);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  const image = await win.webContents.capturePage();
+  fs.writeFileSync(screenshotPath, image.toPNG());
+  win.destroy();
+  app.quit();
+}
+
+app.whenReady()
+  .then(run)
+  .catch((error) => {
+    console.error(error);
+    app.exit(1);
+  });
+`, "utf8");
+
+  await execFileAsync(electronPath, [runnerPath, htmlPath, screenshotPath]);
 
   const stat = await fs.stat(screenshotPath);
   if (stat.size === 0) {

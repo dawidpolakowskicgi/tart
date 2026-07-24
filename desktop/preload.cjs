@@ -12,18 +12,18 @@ async function invoke(channel, ...args) {
   return response.data;
 }
 
-contextBridge.exposeInMainWorld("tart", {
-  addEntry: (message, time, date) => invoke("tart:add-entry", message, time, date),
-  cloneEntry: (ref, line) => invoke("tart:clone-entry", ref, line),
-  exportWeek: (format) => invoke("tart:export-week", format),
-  getState: (ref) => invoke("tart:get-state", ref),
-  maximizeWindow: () => invoke("tart:maximize-window"),
-  openLogDir: () => invoke("tart:open-log-dir"),
-  minimizeWindow: () => invoke("tart:minimize-window"),
-  deleteEntry: (ref, line) => invoke("tart:delete-entry", ref, line),
-  editEntry: (ref, line, date, time, message) => invoke("tart:edit-entry", ref, line, date, time, message),
-  copyText: (text) => invoke("tart:copy-text", text),
-  fitWindowHeight: (height) => invoke("tart:fit-window-height", height),
-  saveWeek: (text) => invoke("tart:save-week", text),
-  closeWindow: () => invoke("tart:close-window"),
+contextBridge.exposeInMainWorld("worktrace", {
+  addEntry: (message, time, date) => invoke("worktrace:add-entry", message, time, date),
+  cloneEntry: (ref, line) => invoke("worktrace:clone-entry", ref, line),
+  exportWeek: (format) => invoke("worktrace:export-week", format),
+  getState: (ref) => invoke("worktrace:get-state", ref),
+  maximizeWindow: () => invoke("worktrace:maximize-window"),
+  openLogDir: () => invoke("worktrace:open-log-dir"),
+  minimizeWindow: () => invoke("worktrace:minimize-window"),
+  deleteEntry: (ref, line) => invoke("worktrace:delete-entry", ref, line),
+  editEntry: (ref, line, date, time, message) => invoke("worktrace:edit-entry", ref, line, date, time, message),
+  copyText: (text) => invoke("worktrace:copy-text", text),
+  fitWindowHeight: (height) => invoke("worktrace:fit-window-height", height),
+  saveWeek: (text) => invoke("worktrace:save-week", text),
+  closeWindow: () => invoke("worktrace:close-window"),
 });

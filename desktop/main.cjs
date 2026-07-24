@@ -2,7 +2,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const fsPromises = require("node:fs/promises");
 const { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, screen, shell, Tray } = require("electron");
-const { formatEntriesAsCsv, formatWeekAsPlainText, TartCoreError, TartStore } = require("./tart-core.cjs");
+const { formatEntriesAsCsv, formatWeekAsPlainText, WorktraceCoreError, WorktraceStore } = require("./worktrace-core.cjs");
 
 let mainWindow = null;
 let store = null;
@@ -45,24 +45,24 @@ function firstExistingAsset(fileNames) {
     }
   }
 
-  return assetPath("tart-clock-icon.png");
+  return assetPath("worktrace-clock-icon.png");
 }
 
 function appIconPath() {
   if (process.platform === "darwin") {
-    return firstExistingAsset(["tart-clock-icon.icns", "tart-clock-icon.png"]);
+    return firstExistingAsset(["worktrace-clock-icon.icns", "worktrace-clock-icon.png"]);
   }
 
   if (process.platform === "win32") {
-    return firstExistingAsset(["tart-clock-icon.ico", "tart-clock-icon.png"]);
+    return firstExistingAsset(["worktrace-clock-icon.ico", "worktrace-clock-icon.png"]);
   }
 
-  return firstExistingAsset(["tart-clock-icon.png"]);
+  return firstExistingAsset(["worktrace-clock-icon.png"]);
 }
 
 function trayIcon() {
   const size = process.platform === "darwin" ? 24 : 20;
-  return nativeImage.createFromPath(assetPath("tart-clock-icon.png")).resize({
+  return nativeImage.createFromPath(assetPath("worktrace-clock-icon.png")).resize({
     height: size,
     width: size,
   });
@@ -71,7 +71,7 @@ function trayIcon() {
 function setDockIcon() {
   if (process.platform === "darwin" && app.dock) {
     try {
-      app.dock.setIcon(nativeImage.createFromPath(assetPath("tart-clock-icon.png")));
+      app.dock.setIcon(nativeImage.createFromPath(assetPath("worktrace-clock-icon.png")));
     } catch (_error) {
       app.dock.setIcon(nativeImage.createFromPath(appIconPath()));
     }
@@ -79,7 +79,7 @@ function setDockIcon() {
 }
 
 function createStore() {
-  store = new TartStore();
+  store = new WorktraceStore();
 }
 
 function showDockIcon() {
@@ -149,7 +149,7 @@ function createWindow() {
     height: DEFAULT_WINDOW_HEIGHT,
     minWidth: MIN_WINDOW_WIDTH,
     minHeight: MIN_WINDOW_HEIGHT,
-    title: "tart",
+    title: "worktrace",
     backgroundColor: "#f6f7f3",
     icon: appIconPath(),
     frame: false,
@@ -193,10 +193,10 @@ function createTray() {
   }
 
   tray = new Tray(trayIcon());
-  tray.setToolTip("tart");
+  tray.setToolTip("worktrace");
   tray.setContextMenu(Menu.buildFromTemplate([
     {
-      label: "Show tart",
+      label: "Show worktrace",
       click: showMainWindow,
     },
     {
@@ -211,7 +211,7 @@ function createTray() {
     },
     { type: "separator" },
     {
-      label: "Quit tart",
+      label: "Quit worktrace",
       click: () => {
         isQuitting = true;
         app.quit();
@@ -235,7 +235,7 @@ function normalizeExportFormat(format) {
   const key = String(format || "").toLowerCase();
 
   if (!Object.hasOwn(exportFormats, key)) {
-    throw new TartCoreError(`unsupported export format: ${format}`);
+    throw new WorktraceCoreError(`unsupported export format: ${format}`);
   }
 
   return key;
@@ -243,7 +243,7 @@ function normalizeExportFormat(format) {
 
 function defaultExportPath(week, format) {
   const options = exportFormats[format];
-  return path.join(app.getPath("documents"), `tart-${week.weekStart}.${options.extension}`);
+  return path.join(app.getPath("documents"), `worktrace-${week.weekStart}.${options.extension}`);
 }
 
 function buildWeekPdfHtml(week) {
@@ -265,7 +265,7 @@ function buildWeekPdfHtml(week) {
 <html>
   <head>
     <meta charset="utf-8">
-    <title>tart week ${escapeHtml(week.weekStart)}</title>
+    <title>worktrace week ${escapeHtml(week.weekStart)}</title>
     <style>
       * { box-sizing: border-box; }
       body {
@@ -322,7 +322,7 @@ function buildWeekPdfHtml(week) {
   </head>
   <body>
     <header>
-      <h1>tart weekly export</h1>
+      <h1>worktrace weekly export</h1>
       <p>Week of ${escapeHtml(week.weekStart)}</p>
     </header>
     <table>
@@ -405,7 +405,7 @@ async function exportWeek(formatValue) {
 }
 
 function serializeError(error) {
-  if (error instanceof TartCoreError) {
+  if (error instanceof WorktraceCoreError) {
     return { message: error.message, expected: true };
   }
 
@@ -428,7 +428,7 @@ async function openLogDirectory() {
   const result = await shell.openPath(store.logDir);
 
   if (result) {
-    throw new TartCoreError(result);
+    throw new WorktraceCoreError(result);
   }
 
   return store.logDir;
@@ -436,7 +436,7 @@ async function openLogDirectory() {
 
 app.whenReady().then(() => {
   if (process.platform === "win32") {
-    app.setAppUserModelId("com.tart.desktop");
+    app.setAppUserModelId("com.cgi.worktrace.desktop");
   }
 
   setDockIcon();
@@ -459,24 +459,24 @@ app.on("window-all-closed", () => {
   }
 });
 
-ipcMain.handle("tart:get-state", (_event, ref) => handleDesktopAction(() => store.getState(ref)));
-ipcMain.handle("tart:add-entry", (_event, message, time, date) => handleDesktopAction(() => store.addEntry(message, time, date).then(() => store.getState())));
-ipcMain.handle("tart:clone-entry", (_event, ref, line) => handleDesktopAction(() => store.cloneEntry(ref, line).then(() => store.getState(ref))));
-ipcMain.handle("tart:delete-entry", (_event, ref, line) => handleDesktopAction(() => store.deleteEntry(ref, line).then(() => store.getState(ref))));
-ipcMain.handle("tart:edit-entry", (_event, ref, line, date, time, message) => handleDesktopAction(() => store.editEntry(ref, line, date, time, message).then(() => store.getState(ref))));
-ipcMain.handle("tart:copy-text", (_event, text) => handleDesktopAction(() => {
+ipcMain.handle("worktrace:get-state", (_event, ref) => handleDesktopAction(() => store.getState(ref)));
+ipcMain.handle("worktrace:add-entry", (_event, message, time, date) => handleDesktopAction(() => store.addEntry(message, time, date).then(() => store.getState())));
+ipcMain.handle("worktrace:clone-entry", (_event, ref, line) => handleDesktopAction(() => store.cloneEntry(ref, line).then(() => store.getState(ref))));
+ipcMain.handle("worktrace:delete-entry", (_event, ref, line) => handleDesktopAction(() => store.deleteEntry(ref, line).then(() => store.getState(ref))));
+ipcMain.handle("worktrace:edit-entry", (_event, ref, line, date, time, message) => handleDesktopAction(() => store.editEntry(ref, line, date, time, message).then(() => store.getState(ref))));
+ipcMain.handle("worktrace:copy-text", (_event, text) => handleDesktopAction(() => {
   clipboard.writeText(String(text || ""));
   return true;
 }));
-ipcMain.handle("tart:save-week", (_event, text) => handleDesktopAction(() => store.saveWeek("", text).then(() => store.getState())));
-ipcMain.handle("tart:open-log-dir", () => handleDesktopAction(openLogDirectory));
-ipcMain.handle("tart:export-week", (_event, format) => handleDesktopAction(() => exportWeek(format)));
-ipcMain.handle("tart:minimize-window", () => handleDesktopAction(() => {
+ipcMain.handle("worktrace:save-week", (_event, text) => handleDesktopAction(() => store.saveWeek("", text).then(() => store.getState())));
+ipcMain.handle("worktrace:open-log-dir", () => handleDesktopAction(openLogDirectory));
+ipcMain.handle("worktrace:export-week", (_event, format) => handleDesktopAction(() => exportWeek(format)));
+ipcMain.handle("worktrace:minimize-window", () => handleDesktopAction(() => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.minimize();
   }
 }));
-ipcMain.handle("tart:maximize-window", () => handleDesktopAction(() => {
+ipcMain.handle("worktrace:maximize-window", () => handleDesktopAction(() => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     if (mainWindow.isMaximized()) {
       mainWindow.unmaximize();
@@ -485,12 +485,12 @@ ipcMain.handle("tart:maximize-window", () => handleDesktopAction(() => {
     }
   }
 }));
-ipcMain.handle("tart:close-window", () => handleDesktopAction(() => {
+ipcMain.handle("worktrace:close-window", () => handleDesktopAction(() => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.close();
   }
 }));
-ipcMain.handle("tart:fit-window-height", (_event, contentHeight) => handleDesktopAction(() => {
+ipcMain.handle("worktrace:fit-window-height", (_event, contentHeight) => handleDesktopAction(() => {
   fitWindowToContent(contentHeight);
   return true;
 }));

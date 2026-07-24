@@ -6,15 +6,15 @@ const DATE_PATTERN = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
 const ISO_WEEK_PATTERN = /^([0-9]{4})-W([0-9]{2})$/;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-class TartCoreError extends Error {
+class AppCoreError extends Error {
   constructor(message) {
     super(message);
-    this.name = "TartCoreError";
+    this.name = "AppCoreError";
   }
 }
 
-function defaultLogDir(homeDir = os.homedir()) {
-  return path.join(homeDir, "Documents", "tart");
+function defaultDataDir(homeDir = os.homedir()) {
+  return path.join(homeDir, "Documents", "worktrace");
 }
 
 function pad2(value) {
@@ -29,14 +29,11 @@ function formatLocalDate(date = new Date()) {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
-function formatLocalDateTime(date = new Date()) {
-  return `${formatLocalDate(date)} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
-}
-
 function parseDateLiteral(value) {
   const match = DATE_PATTERN.exec(value || "");
+
   if (!match) {
-    throw new TartCoreError(`invalid date: ${value}`);
+    throw new AppCoreError(`invalid date: ${value}`);
   }
 
   const year = Number(match[1]);
@@ -49,7 +46,7 @@ function parseDateLiteral(value) {
     date.getUTCMonth() !== month - 1 ||
     date.getUTCDate() !== day
   ) {
-    throw new TartCoreError(`invalid date: ${value}`);
+    throw new AppCoreError(`invalid date: ${value}`);
   }
 
   return date;
@@ -77,15 +74,16 @@ function isoWeekForDate(value) {
 
 function weekStartForIsoWeek(value) {
   const match = ISO_WEEK_PATTERN.exec(value || "");
+
   if (!match) {
-    throw new TartCoreError(`invalid ISO week: ${value}`);
+    throw new AppCoreError(`invalid ISO week: ${value}`);
   }
 
   const isoYear = Number(match[1]);
   const isoWeek = Number(match[2]);
 
   if (isoWeek < 1 || isoWeek > 53) {
-    throw new TartCoreError(`invalid ISO week: ${value}`);
+    throw new AppCoreError(`invalid ISO week: ${value}`);
   }
 
   const jan4 = new Date(Date.UTC(isoYear, 0, 4));
@@ -95,7 +93,7 @@ function weekStartForIsoWeek(value) {
   const weekStartText = formatUtcDate(weekStart);
 
   if (isoWeekForDate(weekStartText) !== value) {
-    throw new TartCoreError(`invalid ISO week: ${value}`);
+    throw new AppCoreError(`invalid ISO week: ${value}`);
   }
 
   return weekStartText;
@@ -112,44 +110,27 @@ function weekStartFromRef(ref, today = formatLocalDate()) {
     return weekStartForIsoWeek(value);
   }
 
-  throw new TartCoreError(`invalid week reference: ${value}`);
+  throw new AppCoreError(`invalid week reference: ${value}`);
 }
 
 function normalizeLogText(text) {
-  const normalized = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n+$/, "");
+  const normalized = String(text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\n+$/, "");
   return normalized ? `${normalized}\n` : "";
-}
-
-function parseEntryLine(line, index) {
-  const date = line.slice(0, 10);
-  const hasTimestamp = line.slice(10, 11) === " " && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2} /.test(line);
-  const hasDateOnlySeparator = line.slice(10, 11) === " ";
-  const time = hasTimestamp ? line.slice(11, 16) : "";
-  const message = hasTimestamp ? line.slice(17) : hasDateOnlySeparator ? line.slice(11) : line;
-
-  return {
-    id: `${index}-${line}`,
-    date,
-    time,
-    message,
-    line,
-    valid: DATE_PATTERN.test(date) && (hasTimestamp || hasDateOnlySeparator),
-  };
 }
 
 function parseEntries(text) {
   return normalizeLogText(text)
     .split("\n")
     .filter(Boolean)
-    .map(parseEntryLine);
-}
-
-function formatWeekAsPlainText(week) {
-  return normalizeLogText(week && week.text ? week.text : "");
-}
-
-function sortWeekStartsDescending(left, right) {
-  return String(right).localeCompare(String(left));
+    .map((line, index) => ({
+      id: `${index}-${line}`,
+      date: line.slice(0, 10),
+      message: line.slice(11),
+      line,
+    }));
 }
 
 function escapeCsvCell(value) {
@@ -172,12 +153,11 @@ function formatEntriesAsCsv(entries) {
   return `${rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n")}\n`;
 }
 
-class TartStore {
+class ActivityStore {
   constructor(options = {}) {
     this.env = options.env || process.env;
-    this.logDir = options.logDir || this.env.TART_LOGDIR || defaultLogDir(options.homeDir);
-    this.todayOverride = options.today || this.env.TART_TODAY || "";
-    this.now = typeof options.now === "function" ? options.now : () => new Date();
+    this.logDir = options.logDir || this.env.APP_LOGDIR || defaultDataDir(options.homeDir);
+    this.todayOverride = options.today || this.env.APP_TODAY || "";
   }
 
   todayDate() {
@@ -212,53 +192,25 @@ class TartStore {
     }
   }
 
-  async listAvailableWeeks() {
-    try {
-      const entries = await fs.readdir(this.logDir, { withFileTypes: true });
-      return entries
-        .filter((entry) => entry.isFile() && /^([0-9]{4}-[0-9]{2}-[0-9]{2})\.log$/.test(entry.name))
-        .map((entry) => entry.name.slice(0, -4))
-        .sort(sortWeekStartsDescending);
-    } catch (error) {
-      if (error && error.code === "ENOENT") {
-        return [];
-      }
-      throw error;
-    }
-  }
-
-  async addEntry(message, time = "", date = "") {
+  async addEntry(message) {
     const cleanMessage = String(message || "").trim();
-    const cleanTime = String(time || "").trim();
-    const cleanDate = String(date || "").trim();
 
     if (!cleanMessage) {
-      throw new TartCoreError("missing entry message");
+      throw new AppCoreError("missing entry message");
     }
 
     if (cleanMessage.includes("\n") || cleanMessage.includes("\r")) {
-      throw new TartCoreError("entry message must be a single line");
+      throw new AppCoreError("entry message must be a single line");
     }
 
     const today = this.todayDate();
-    const entryDate = cleanDate || today;
-    if (cleanDate && !DATE_PATTERN.test(cleanDate)) {
-      throw new TartCoreError(`invalid date: ${cleanDate}`);
-    }
-    const filePath = this.weekPath(entryDate);
-    const timestamp = cleanTime ? `${entryDate} ${cleanTime}` : formatLocalDateTime(this.now()).replace(/^([0-9]{4}-[0-9]{2}-[0-9]{2})/, entryDate);
-    const line = `${timestamp} ${cleanMessage}`;
+    const filePath = this.weekPath(today);
+    const line = `${today} ${cleanMessage}`;
 
     await this.ensureLogDir();
     await fs.appendFile(filePath, `${line}\n`, "utf8");
 
-    return {
-      date: entryDate,
-      time: timestamp.slice(11, 16),
-      message: cleanMessage,
-      line,
-      filePath,
-    };
+    return { date: today, message: cleanMessage, line, filePath };
   }
 
   async readWeek(ref = "") {
@@ -294,85 +246,15 @@ class TartStore {
     return this.readWeek(weekStart);
   }
 
-  async deleteEntry(ref, line) {
-    const weekStart = this.weekStart(ref || "");
-    const filePath = this.weekPath(weekStart);
-    const week = await this.readWeek(weekStart);
-    const targetLine = String(line || "");
-
-    await this.ensureLogDir();
-    const nextText = week.entries
-      .filter((entry) => entry.line !== targetLine)
-      .map((entry) => entry.line)
-      .join("\n");
-
-    await fs.writeFile(filePath, normalizeLogText(nextText), "utf8");
-    return this.readWeek(weekStart);
-  }
-
-  async cloneEntry(ref, line) {
-    const weekStart = this.weekStart(ref || "");
-    const filePath = this.weekPath(weekStart);
-    const cleanLine = String(line || "").trim();
-
-    if (!cleanLine) {
-      throw new TartCoreError("missing entry line");
-    }
-
-    await this.ensureLogDir();
-    await fs.appendFile(filePath, `${cleanLine}\n`, "utf8");
-    return this.readWeek(weekStart);
-  }
-
-  async editEntry(ref, line, date, time, message) {
-    const weekStart = this.weekStart(ref || "");
-    const filePath = this.weekPath(weekStart);
-    const cleanLine = String(line || "").trim();
-    const cleanDate = String(date || "").trim();
-    const cleanTime = String(time || "").trim();
-    const cleanMessage = String(message || "").trim();
-
-    if (!cleanLine) {
-      throw new TartCoreError("missing entry line");
-    }
-
-    if (!cleanMessage) {
-      throw new TartCoreError("missing entry message");
-    }
-
-    if (cleanDate && !DATE_PATTERN.test(cleanDate)) {
-      throw new TartCoreError(`invalid date: ${cleanDate}`);
-    }
-
-    const week = await this.readWeek(weekStart);
-    const nextText = week.entries
-      .map((entry) => {
-        if (entry.line !== cleanLine) {
-          return entry.line;
-        }
-
-        const nextDate = cleanDate || entry.date;
-        const nextTime = cleanTime || entry.time;
-        return `${nextDate}${nextTime ? ` ${nextTime}` : ""} ${cleanMessage}`;
-      })
-      .join("\n");
-
-    await this.ensureLogDir();
-    await fs.writeFile(filePath, normalizeLogText(nextText), "utf8");
-    return this.readWeek(weekStart);
-  }
-
   async getState(ref = "") {
     const week = await this.readWeek(ref);
     const today = await this.readToday();
-    const availableWeeks = await this.listAvailableWeeks();
 
     return {
       config: {
         logDir: this.logDir,
         currentFile: this.weekPath(this.todayDate()),
       },
-      availableWeeks,
       today,
       week,
     };
@@ -380,20 +262,10 @@ class TartStore {
 }
 
 module.exports = {
-  TartCoreError,
-  TartStore,
-  defaultLogDir,
-  escapeCsvCell,
+  ActivityStore,
+  AppCoreError,
+  defaultDataDir,
   formatEntriesAsCsv,
-  formatLocalDate,
-  formatLocalDateTime,
-  formatUtcDate,
-  formatWeekAsPlainText,
   normalizeLogText,
-  parseDateLiteral,
   parseEntries,
-  sortWeekStartsDescending,
-  weekStartForDate,
-  weekStartForIsoWeek,
-  weekStartFromRef,
 };

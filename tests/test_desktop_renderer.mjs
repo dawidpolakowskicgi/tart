@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { buildEntryMessage, createTartRenderer } = require("../desktop/renderer.cjs");
+const { buildEntryMessage, createWorktraceRenderer } = require("../desktop/renderer.cjs");
 
 class FakeClassList {
   constructor(element) {
@@ -90,6 +90,7 @@ class FakeDocument {
       "entryInput",
       "entryDateInput",
       "entryTimeInput",
+      "projectInput",
       "applyWeekFilterButton",
       "logDir",
       "clearWeekFilterButton",
@@ -152,8 +153,8 @@ class FakeDocument {
 function makeState(overrides = {}) {
   return {
     config: {
-      currentFile: "/tmp/tart/2026-04-27.log",
-      logDir: "/tmp/tart",
+      currentFile: "/tmp/worktrace/2026-04-27.log",
+      logDir: "/tmp/worktrace",
     },
     availableWeeks: ["2026-04-27", "2026-04-20"],
     today: {
@@ -179,7 +180,7 @@ function makeState(overrides = {}) {
           message: "current day",
         },
       ],
-      filePath: "/tmp/tart/2026-04-27.log",
+      filePath: "/tmp/worktrace/2026-04-27.log",
       text: "2026-04-29 08:30 previous day\n2026-04-30 09:15 current day\n",
       weekStart: "2026-04-27",
     },
@@ -200,7 +201,7 @@ function makeRenderer(apiOverrides = {}) {
         },
         week: {
           entries: [{ date: "2026-04-30", time: "09:15", message }],
-          filePath: "/tmp/tart/2026-04-27.log",
+          filePath: "/tmp/worktrace/2026-04-27.log",
           text: `2026-04-30 09:15 ${message}\n`,
           weekStart: "2026-04-27",
         },
@@ -214,20 +215,20 @@ function makeRenderer(apiOverrides = {}) {
       calls.push(["exportWeek", format]);
       return {
         canceled: false,
-        filePath: `/tmp/tart/week.${format}`,
+        filePath: `/tmp/worktrace/week.${format}`,
         format,
       };
     },
     openLogDir: async () => {
       calls.push(["openLogDir"]);
-      return "/tmp/tart";
+      return "/tmp/worktrace";
     },
     saveWeek: async (text) => {
       calls.push(["saveWeek", text]);
       return makeState({
         week: {
           entries: [{ date: "2026-04-30", time: "09:15", message: "saved" }],
-          filePath: "/tmp/tart/2026-04-27.log",
+          filePath: "/tmp/worktrace/2026-04-27.log",
           text,
           weekStart: "2026-04-27",
         },
@@ -242,7 +243,7 @@ function makeRenderer(apiOverrides = {}) {
       return makeState({
         week: {
           entries: [{ date: "2026-04-29", time: "08:30", message }],
-          filePath: "/tmp/tart/2026-04-27.log",
+          filePath: "/tmp/worktrace/2026-04-27.log",
           text: `2026-04-29 08:30 ${message}\n`,
           weekStart: "2026-04-27",
         },
@@ -255,7 +256,7 @@ function makeRenderer(apiOverrides = {}) {
       return makeState({
         week: {
           entries: [{ date, time, message }],
-          filePath: "/tmp/tart/2026-04-27.log",
+          filePath: "/tmp/worktrace/2026-04-27.log",
           text: `${line}\n`,
           weekStart: "2026-04-27",
         },
@@ -272,7 +273,7 @@ function makeRenderer(apiOverrides = {}) {
     api,
     calls,
     document,
-    renderer: createTartRenderer({ api, document }),
+    renderer: createWorktraceRenderer({ api, document }),
   };
 }
 
@@ -305,7 +306,7 @@ await runTest("renderer starts and paints initial state", async () => {
   assert.equal(renderer.elements.weekLabel.textContent, "Week of 2026-04-27");
   assert.equal(renderer.elements.weekCount.textContent, "2");
   assert.equal(renderer.elements.todayCount.textContent, "1");
-  assert.equal(renderer.elements.logDir.textContent, "/tmp/tart");
+  assert.equal(renderer.elements.logDir.textContent, "/tmp/worktrace");
   assert.equal(renderer.elements.themeButton.textContent, "Dark");
   assert.equal(renderer.elements.weekEntries.children.length, 2);
   assert.equal(renderer.elements.todayEntries.children.length, 1);
@@ -333,7 +334,7 @@ await runTest("renderer shows empty states", () => {
     today: { date: "2026-04-30", entries: [] },
     week: {
       entries: [],
-      filePath: "/tmp/tart/2026-04-27.log",
+      filePath: "/tmp/worktrace/2026-04-27.log",
       text: "",
       weekStart: "2026-04-27",
     },
@@ -408,15 +409,17 @@ await runTest("renderer appends ticket or link references", async () => {
   renderer.elements.entryInput.value = "Updated invoice workflow";
   renderer.elements.entryDateInput.value = "2026-04-30";
   renderer.elements.entryTimeInput.value = "09:15";
+  renderer.elements.projectInput.value = " Platform ";
   renderer.elements.referenceInput.value = " CGI-123 ";
 
   await renderer.addEntry({ preventDefault() {} });
 
-  assert.deepEqual(calls, [["addEntry", "Updated invoice workflow [ref: CGI-123]", "09:15", "2026-04-30"]]);
+  assert.deepEqual(calls, [["addEntry", "Updated invoice workflow [project: Platform] [ref: CGI-123]", "09:15", "2026-04-30"]]);
   assert.equal(renderer.elements.entryInput.value, "");
+  assert.equal(renderer.elements.projectInput.value, "");
   assert.equal(renderer.elements.referenceInput.value, "");
   assert.equal(renderer.elements.weekEntries.children[0].children[0].textContent, "2026-04-30 09:15");
-  assert.equal(renderer.elements.weekEntries.children[0].children[1].textContent, "Updated invoice workflow [ref: CGI-123]");
+  assert.equal(renderer.elements.weekEntries.children[0].children[1].textContent, "Updated invoice workflow [project: Platform] [ref: CGI-123]");
 });
 
 await runTest("renderer clones and deletes log rows", async () => {
@@ -456,8 +459,10 @@ await runTest("renderer copies visible week text", async () => {
 });
 
 await runTest("renderer builds reference messages", () => {
-  assert.equal(buildEntryMessage("Fixed reports", ""), "Fixed reports");
-  assert.equal(buildEntryMessage("Fixed reports", "https://example.test/ticket/1"), "Fixed reports [ref: https://example.test/ticket/1]");
+  assert.equal(buildEntryMessage("Fixed reports", "", ""), "Fixed reports");
+  assert.equal(buildEntryMessage("Fixed reports", "Platform", ""), "Fixed reports [project: Platform]");
+  assert.equal(buildEntryMessage("Fixed reports", "", "https://example.test/ticket/1"), "Fixed reports [ref: https://example.test/ticket/1]");
+  assert.equal(buildEntryMessage("Fixed reports", "Platform", "https://example.test/ticket/1"), "Fixed reports [project: Platform] [ref: https://example.test/ticket/1]");
 });
 
 await runTest("renderer rejects empty add form", async () => {
@@ -485,6 +490,19 @@ await runTest("renderer rejects multiline references", async () => {
   assert.equal(renderer.elements.referenceInput.focusCount, 1);
 });
 
+await runTest("renderer rejects multiline project values", async () => {
+  const { calls, renderer } = makeRenderer();
+  renderer.elements.entryInput.value = "Updated docs";
+  renderer.elements.projectInput.value = "Platform\nAPI";
+
+  await renderer.addEntry({ preventDefault() {} });
+
+  assert.deepEqual(calls, []);
+  assert.equal(renderer.elements.status.textContent, "Task project must be a single line.");
+  assert.equal(renderer.elements.status.dataset.tone, "error");
+  assert.equal(renderer.elements.projectInput.focusCount, 1);
+});
+
 await runTest("renderer saves weekly editor text", async () => {
   const { calls, renderer } = makeRenderer();
   renderer.elements.weekEditor.value = "2026-04-30 saved\n";
@@ -504,7 +522,7 @@ await runTest("renderer exports week formats", async () => {
   await document.exportButtons[1].listeners.click();
 
   assert.deepEqual(calls, [["getState", ""], ["exportWeek", "csv"]]);
-  assert.equal(renderer.elements.status.textContent, "Exported CSV week to /tmp/tart/week.csv.");
+  assert.equal(renderer.elements.status.textContent, "Exported CSV week to /tmp/worktrace/week.csv.");
   assert.equal(renderer.elements.status.dataset.tone, "ok");
 });
 

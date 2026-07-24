@@ -585,7 +585,7 @@ select#weekRefInput {
 
 .entry-form {
   display: grid;
-  grid-template-columns: 180px 160px minmax(0, 1.5fr) minmax(220px, 0.9fr);
+  grid-template-columns: 180px 160px minmax(0, 1.35fr) minmax(180px, 0.7fr) minmax(220px, 0.9fr);
   gap: 12px;
   align-items: stretch;
   border: 1px solid var(--line);
@@ -611,6 +611,7 @@ select#weekRefInput {
 }
 
 .entry-form #entryInput,
+.entry-form #projectInput,
 .entry-form #referenceInput {
   min-width: 0;
   width: 100%;
@@ -621,6 +622,7 @@ select#weekRefInput {
   font-weight: 600;
 }
 
+.entry-form #projectInput,
 .entry-form #referenceInput {
   font-size: 15px;
 }

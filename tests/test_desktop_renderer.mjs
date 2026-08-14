@@ -2,7 +2,16 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { buildEntryMessage, createWorktraceRenderer } = require("../desktop/renderer.cjs");
+const {
+  buildDiagramData,
+  buildEntryMessage,
+  createWorktraceRenderer,
+  formatEntryLine,
+  formatSpentMinutes,
+  hasLineBreak,
+  parseEntryMessage,
+  parseSpentToMinutes,
+} = require("../desktop/renderer.cjs");
 
 class FakeClassList {
   constructor(element) {
@@ -33,6 +42,7 @@ class FakeElement {
     this.id = id;
     this.className = className;
     this.dataset = { ...dataset };
+    this.style = {};
     this.textContent = "";
     this.value = "";
     this.disabled = false;
@@ -72,6 +82,7 @@ class FakeDocument {
     this.tabs = [
       new FakeElement({ className: "tab is-active", dataset: { view: "week" } }),
       new FakeElement({ className: "tab", dataset: { view: "today" } }),
+      new FakeElement({ className: "tab", dataset: { view: "diagram" } }),
       new FakeElement({ className: "tab", dataset: { view: "edit" } }),
     ];
     this.exportButtons = [
@@ -82,6 +93,7 @@ class FakeDocument {
     this.views = [
       new FakeElement({ id: "weekView", className: "view is-active" }),
       new FakeElement({ id: "todayView", className: "view" }),
+      new FakeElement({ id: "diagramView", className: "view" }),
       new FakeElement({ id: "editView", className: "view" }),
     ];
 
@@ -90,12 +102,15 @@ class FakeDocument {
       "entryInput",
       "entryDateInput",
       "entryTimeInput",
+      "timeSpentInput",
       "projectInput",
       "applyWeekFilterButton",
       "logDir",
       "clearWeekFilterButton",
       "filterSummary",
       "copyWeekButton",
+      "diagramPanel",
+      "diagramSummary",
       "openLogDirButton",
       "rangeEndInput",
       "rangeStartInput",
@@ -266,6 +281,18 @@ function makeRenderer(apiOverrides = {}) {
       calls.push(["deleteEntry", ref, line]);
       return makeState();
     },
+    closeWindow: async () => {
+      calls.push(["closeWindow"]);
+      return true;
+    },
+    maximizeWindow: async () => {
+      calls.push(["maximizeWindow"]);
+      return true;
+    },
+    minimizeWindow: async () => {
+      calls.push(["minimizeWindow"]);
+      return true;
+    },
     ...apiOverrides,
   };
 
@@ -313,6 +340,8 @@ await runTest("renderer starts and paints initial state", async () => {
   assert.equal(renderer.elements.weekRefInput.value, "2026-04-27");
   assert.equal(renderer.elements.weekRefInput.children.length, 2);
   assert.equal(renderer.elements.filterSummary.textContent, "Week reference 2026-04-27. Showing 2 of 2 entries from start of week to end of week.");
+  assert.equal(renderer.elements.diagramSummary.textContent, "2 activities · 0m");
+  assert.equal(renderer.elements.diagramPanel.children.length, 1);
 });
 
 await runTest("renderer switches views", () => {
@@ -322,9 +351,20 @@ await runTest("renderer switches views", () => {
 
   assert.equal(renderer.getCurrentView(), "edit");
   assert.equal(renderer.elements.viewTitle.textContent, "Edit weekly file");
+  assert.equal(document.tabs[3].classList.contains("is-active"), true);
+  assert.equal(document.views[3].classList.contains("is-active"), true);
+  assert.equal(document.views[0].classList.contains("is-active"), false);
+});
+
+await runTest("renderer switches to diagram view", () => {
+  const { document, renderer } = makeRenderer();
+
+  renderer.showView("diagram");
+
+  assert.equal(renderer.getCurrentView(), "diagram");
+  assert.equal(renderer.elements.viewTitle.textContent, "Activity diagram");
   assert.equal(document.tabs[2].classList.contains("is-active"), true);
   assert.equal(document.views[2].classList.contains("is-active"), true);
-  assert.equal(document.views[0].classList.contains("is-active"), false);
 });
 
 await runTest("renderer shows empty states", () => {
@@ -372,6 +412,17 @@ await runTest("renderer cycles theme label on click", async () => {
   assert.equal(document.body.dataset.theme, "light");
 });
 
+await runTest("renderer sends window controls through API", async () => {
+  const { calls, document, renderer } = makeRenderer();
+
+  await renderer.start();
+  await document.windowButtons[0].listeners.click();
+  await document.windowButtons[1].listeners.click();
+  await document.windowButtons[2].listeners.click();
+
+  assert.deepEqual(calls.slice(-3), [["minimizeWindow"], ["maximizeWindow"], ["closeWindow"]]);
+});
+
 await runTest("renderer clears week filters", async () => {
   const { renderer } = makeRenderer();
 
@@ -409,17 +460,19 @@ await runTest("renderer appends ticket or link references", async () => {
   renderer.elements.entryInput.value = "Updated invoice workflow";
   renderer.elements.entryDateInput.value = "2026-04-30";
   renderer.elements.entryTimeInput.value = "09:15";
+  renderer.elements.timeSpentInput.value = " 1h 30m ";
   renderer.elements.projectInput.value = " Platform ";
   renderer.elements.referenceInput.value = " CGI-123 ";
 
   await renderer.addEntry({ preventDefault() {} });
 
-  assert.deepEqual(calls, [["addEntry", "Updated invoice workflow [project: Platform] [ref: CGI-123]", "09:15", "2026-04-30"]]);
+  assert.deepEqual(calls, [["addEntry", "Updated invoice workflow [spent: 1h 30m] [project: Platform] [ref: CGI-123]", "09:15", "2026-04-30"]]);
   assert.equal(renderer.elements.entryInput.value, "");
+  assert.equal(renderer.elements.timeSpentInput.value, "");
   assert.equal(renderer.elements.projectInput.value, "");
   assert.equal(renderer.elements.referenceInput.value, "");
   assert.equal(renderer.elements.weekEntries.children[0].children[0].textContent, "2026-04-30 09:15");
-  assert.equal(renderer.elements.weekEntries.children[0].children[1].textContent, "Updated invoice workflow [project: Platform] [ref: CGI-123]");
+  assert.equal(renderer.elements.weekEntries.children[0].children[1].textContent, "Updated invoice workflow [spent: 1h 30m] [project: Platform] [ref: CGI-123]");
 });
 
 await runTest("renderer clones and deletes log rows", async () => {
@@ -432,15 +485,17 @@ await runTest("renderer clones and deletes log rows", async () => {
   assert.equal(renderer.elements.entryInput.value, "previous day");
   assert.equal(renderer.elements.entryDateInput.value, "2026-04-29");
   assert.equal(renderer.elements.entryTimeInput.value, "08:30");
+  assert.equal(renderer.elements.timeSpentInput.value, "");
   renderer.elements.entryDateInput.value = "2026-04-30";
   renderer.elements.entryTimeInput.value = "09:45";
+  renderer.elements.timeSpentInput.value = "45m";
   renderer.elements.entryInput.value = "updated row";
   await renderer.addEntry({ preventDefault() {} });
-  assert(calls.some(([name, ref, line, date, time, message]) => name === "editEntry" && ref === "2026-04-27" && line === "2026-04-29 08:30 previous day" && date === "2026-04-30" && time === "09:45" && message === "updated row"));
+  assert(calls.some(([name, ref, line, date, time, message]) => name === "editEntry" && ref === "2026-04-27" && line === "2026-04-29 08:30 previous day" && date === "2026-04-30" && time === "09:45" && message === "updated row [spent: 45m]"));
 
   actions = renderer.elements.weekEntries.children[0].children[2];
   await actions.children[1].listeners.click();
-  assert(calls.some(([name, ref, line]) => name === "cloneEntry" && ref === "2026-04-27" && line === "2026-04-29 08:30 updated row"));
+  assert(calls.some(([name, ref, line]) => name === "cloneEntry" && ref === "2026-04-27" && line === "2026-04-29 08:30 updated row [spent: 45m]"));
 
   actions = renderer.elements.weekEntries.children[0].children[2];
   await actions.children[2].listeners.click();
@@ -459,10 +514,55 @@ await runTest("renderer copies visible week text", async () => {
 });
 
 await runTest("renderer builds reference messages", () => {
-  assert.equal(buildEntryMessage("Fixed reports", "", ""), "Fixed reports");
-  assert.equal(buildEntryMessage("Fixed reports", "Platform", ""), "Fixed reports [project: Platform]");
-  assert.equal(buildEntryMessage("Fixed reports", "", "https://example.test/ticket/1"), "Fixed reports [ref: https://example.test/ticket/1]");
-  assert.equal(buildEntryMessage("Fixed reports", "Platform", "https://example.test/ticket/1"), "Fixed reports [project: Platform] [ref: https://example.test/ticket/1]");
+  assert.equal(buildEntryMessage("Fixed reports", "", "", ""), "Fixed reports");
+  assert.equal(buildEntryMessage("Fixed reports", "30m", "", ""), "Fixed reports [spent: 30m]");
+  assert.equal(buildEntryMessage("Fixed reports", "", "Platform", ""), "Fixed reports [project: Platform]");
+  assert.equal(buildEntryMessage("Fixed reports", "", "", "https://example.test/ticket/1"), "Fixed reports [ref: https://example.test/ticket/1]");
+  assert.equal(buildEntryMessage("Fixed reports", "30m", "Platform", "https://example.test/ticket/1"), "Fixed reports [spent: 30m] [project: Platform] [ref: https://example.test/ticket/1]");
+});
+
+await runTest("renderer formats entry lines", () => {
+  assert.equal(formatEntryLine({ date: "2026-04-30", time: "09:15", message: "Fixed reports" }), "2026-04-30 09:15 Fixed reports");
+  assert.equal(formatEntryLine({ date: "2026-04-30", message: "Fixed reports" }), "2026-04-30 Fixed reports");
+  assert.equal(formatEntryLine({ line: "2026-04-30 09:15 Original line" }), "2026-04-30 09:15 Original line");
+});
+
+await runTest("renderer parses structured entry metadata", () => {
+  assert.deepEqual(parseEntryMessage("Fixed reports [spent: 30m] [project: Platform] [ref: CGI-123]"), {
+    message: "Fixed reports",
+    timeSpent: "30m",
+    project: "Platform",
+    reference: "CGI-123",
+  });
+  assert.deepEqual(parseEntryMessage("Fixed reports"), {
+    message: "Fixed reports",
+    timeSpent: "",
+    project: "",
+    reference: "",
+  });
+});
+
+await runTest("renderer builds diagram summaries", () => {
+  assert.equal(parseSpentToMinutes("1h 30m"), 90);
+  assert.equal(parseSpentToMinutes("45m"), 45);
+  assert.equal(parseSpentToMinutes("2"), 120);
+  assert.equal(formatSpentMinutes(135), "2h 15m");
+  assert.equal(formatSpentMinutes(45), "45m");
+
+  assert.deepEqual(buildDiagramData([
+    { date: "2026-07-28", message: "Updated exports [spent: 45m] [project: Desktop]" },
+    { date: "2026-07-28", message: "Reviewed docs [spent: 30m] [project: Docs]" },
+    { date: "2026-07-29", message: "Polished sidebar [project: Desktop]" },
+  ]), {
+    byDay: [
+      { date: "2026-07-28", count: 2, spentMinutes: 75 },
+      { date: "2026-07-29", count: 1, spentMinutes: 0 },
+    ],
+    byProject: [
+      { name: "Desktop", count: 2, spentMinutes: 45 },
+      { name: "Docs", count: 1, spentMinutes: 30 },
+    ],
+  });
 });
 
 await runTest("renderer rejects empty add form", async () => {
@@ -488,6 +588,8 @@ await runTest("renderer rejects multiline references", async () => {
   assert.equal(renderer.elements.status.textContent, "Ticket or link must be a single line.");
   assert.equal(renderer.elements.status.dataset.tone, "error");
   assert.equal(renderer.elements.referenceInput.focusCount, 1);
+  assert.equal(hasLineBreak("CGI-123\nCGI-124"), true);
+  assert.equal(hasLineBreak("CGI-123"), false);
 });
 
 await runTest("renderer rejects multiline project values", async () => {
@@ -501,6 +603,19 @@ await runTest("renderer rejects multiline project values", async () => {
   assert.equal(renderer.elements.status.textContent, "Task project must be a single line.");
   assert.equal(renderer.elements.status.dataset.tone, "error");
   assert.equal(renderer.elements.projectInput.focusCount, 1);
+});
+
+await runTest("renderer rejects multiline time spent values", async () => {
+  const { calls, renderer } = makeRenderer();
+  renderer.elements.entryInput.value = "Updated docs";
+  renderer.elements.timeSpentInput.value = "1h\n30m";
+
+  await renderer.addEntry({ preventDefault() {} });
+
+  assert.deepEqual(calls, []);
+  assert.equal(renderer.elements.status.textContent, "Time spent must be a single line.");
+  assert.equal(renderer.elements.status.dataset.tone, "error");
+  assert.equal(renderer.elements.timeSpentInput.focusCount, 1);
 });
 
 await runTest("renderer saves weekly editor text", async () => {

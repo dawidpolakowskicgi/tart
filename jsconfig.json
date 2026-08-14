@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "lib": ["ES2022", "DOM"],
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "target": "ES2022"
+  },
+  "exclude": ["node_modules", "WORKTRACE"],
+  "include": ["desktop/**/*", "scripts/**/*.mjs", "tests/**/*.mjs"]
+}

@@ -1,6 +1,7 @@
 const viewTitles = {
   week: "This week",
   today: "Today",
+  diagram: "Activity diagram",
   edit: "Edit weekly file",
 };
 
@@ -17,12 +18,81 @@ function compareDates(left, right) {
   return String(left || "").localeCompare(String(right || ""));
 }
 
+function hasLineBreak(value) {
+  return /[\n\r]/.test(String(value || ""));
+}
+
+function formatEntryLine(entry) {
+  if (entry && entry.line) {
+    return entry.line;
+  }
+
+  const date = entry && entry.date ? entry.date : "";
+  const time = entry && entry.time ? ` ${entry.time}` : "";
+  const message = entry && entry.message ? entry.message : "";
+  return `${date}${time} ${message}`.trim();
+}
+
+function formatSpentMinutes(totalMinutes) {
+  const safeMinutes = Math.max(0, Number(totalMinutes) || 0);
+  const hours = Math.floor(safeMinutes / 60);
+  const minutes = safeMinutes % 60;
+
+  if (hours && minutes) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  if (hours) {
+    return `${hours}h`;
+  }
+
+  return `${minutes}m`;
+}
+
+function parseSpentToMinutes(value) {
+  const input = String(value || "").trim().toLowerCase();
+
+  if (!input) {
+    return 0;
+  }
+
+  let total = 0;
+  let matched = false;
+  const pattern = /(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours|m|min|mins|minute|minutes)\b/g;
+  let token = pattern.exec(input);
+
+  while (token) {
+    matched = true;
+    const amount = Number(token[1]);
+    const unit = token[2];
+
+    if (unit.startsWith("h")) {
+      total += Math.round(amount * 60);
+    } else {
+      total += Math.round(amount);
+    }
+
+    token = pattern.exec(input);
+  }
+
+  if (matched) {
+    return total;
+  }
+
+  if (/^\d+(?:\.\d+)?$/.test(input)) {
+    return Math.round(Number(input) * 60);
+  }
+
+  return 0;
+}
+
 function collectElements(documentRef) {
   return {
     entryForm: documentRef.querySelector("#entryForm"),
     entryInput: documentRef.querySelector("#entryInput"),
     entryDateInput: documentRef.querySelector("#entryDateInput"),
     entryTimeInput: documentRef.querySelector("#entryTimeInput"),
+    timeSpentInput: documentRef.querySelector("#timeSpentInput"),
     projectInput: documentRef.querySelector("#projectInput"),
     exportButtons: Array.from(documentRef.querySelectorAll(".export-button")),
     themeButton: documentRef.querySelector("#themeButton"),
@@ -33,6 +103,8 @@ function collectElements(documentRef) {
     clearWeekFilterButton: documentRef.querySelector("#clearWeekFilterButton"),
     filterSummary: documentRef.querySelector("#filterSummary"),
     copyWeekButton: documentRef.querySelector("#copyWeekButton"),
+    diagramPanel: documentRef.querySelector("#diagramPanel"),
+    diagramSummary: documentRef.querySelector("#diagramSummary"),
     rangeEndInput: documentRef.querySelector("#rangeEndInput"),
     rangeStartInput: documentRef.querySelector("#rangeStartInput"),
     referenceInput: documentRef.querySelector("#referenceInput"),
@@ -59,11 +131,45 @@ function formatWeekOptionLabel(weekStart) {
   return `${weekStart}`;
 }
 
-function buildEntryMessage(message, project, reference) {
+function parseEntryMessage(message) {
+  const result = {
+    message: String(message || "").trim(),
+    project: "",
+    reference: "",
+    timeSpent: "",
+  };
+
+  while (true) {
+    const match = /\s+\[(spent|project|ref): ([^\]]+)\]$/.exec(result.message);
+
+    if (!match) {
+      return result;
+    }
+
+    if (match[1] === "spent" && !result.timeSpent) {
+      result.timeSpent = match[2].trim();
+    } else if (match[1] === "project" && !result.project) {
+      result.project = match[2].trim();
+    } else if (match[1] === "ref" && !result.reference) {
+      result.reference = match[2].trim();
+    } else {
+      return result;
+    }
+
+    result.message = result.message.slice(0, match.index).trimEnd();
+  }
+}
+
+function buildEntryMessage(message, timeSpent, project, reference) {
   const cleanMessage = String(message || "").trim();
+  const cleanTimeSpent = String(timeSpent || "").trim();
   const cleanProject = String(project || "").trim();
   const cleanReference = String(reference || "").trim();
   const segments = [cleanMessage];
+
+  if (cleanTimeSpent) {
+    segments.push(`[spent: ${cleanTimeSpent}]`);
+  }
 
   if (cleanProject) {
     segments.push(`[project: ${cleanProject}]`);
@@ -74,6 +180,38 @@ function buildEntryMessage(message, project, reference) {
   }
 
   return segments.join(" ");
+}
+
+function buildDiagramData(entries) {
+  const dayMap = new Map();
+  const projectMap = new Map();
+
+  for (const entry of entries || []) {
+    const parsed = parseEntryMessage(entry.message);
+    const spentMinutes = parseSpentToMinutes(parsed.timeSpent);
+    const dayRecord = dayMap.get(entry.date) || { date: entry.date, count: 0, spentMinutes: 0 };
+    dayRecord.count += 1;
+    dayRecord.spentMinutes += spentMinutes;
+    dayMap.set(entry.date, dayRecord);
+
+    if (parsed.project) {
+      const projectRecord = projectMap.get(parsed.project) || { name: parsed.project, count: 0, spentMinutes: 0 };
+      projectRecord.count += 1;
+      projectRecord.spentMinutes += spentMinutes;
+      projectMap.set(parsed.project, projectRecord);
+    }
+  }
+
+  return {
+    byDay: Array.from(dayMap.values()).sort((left, right) => compareDates(left.date, right.date)),
+    byProject: Array.from(projectMap.values()).sort((left, right) => {
+      if (right.count !== left.count) {
+        return right.count - left.count;
+      }
+
+      return left.name.localeCompare(right.name);
+    }),
+  };
 }
 
 function createWorktraceRenderer({ document: documentRef, api, initialView = "week" }) {
@@ -124,6 +262,7 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
 
   function setBusy(isBusy) {
     elements.entryInput.disabled = isBusy;
+    elements.timeSpentInput.disabled = isBusy;
     elements.projectInput.disabled = isBusy;
     elements.referenceInput.disabled = isBusy;
     elements.entryDateInput.disabled = isBusy;
@@ -153,13 +292,45 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
     }
 
     elements.entryForm.dataset.mode = "edit";
+    const parsedEntry = parseEntryMessage(currentEditing.message);
     elements.entryDateInput.value = currentEditing.date;
     elements.entryTimeInput.value = currentEditing.time || "";
-    elements.entryInput.value = currentEditing.message;
-    elements.projectInput.value = "";
-    elements.referenceInput.value = "";
+    elements.entryInput.value = parsedEntry.message;
+    elements.timeSpentInput.value = parsedEntry.timeSpent;
+    elements.projectInput.value = parsedEntry.project;
+    elements.referenceInput.value = parsedEntry.reference;
     elements.entrySubmitButton.textContent = "Save";
     scheduleWindowFit();
+  }
+
+  function readEntryForm() {
+    return {
+      date: elements.entryDateInput.value.trim(),
+      message: elements.entryInput.value.trim(),
+      project: elements.projectInput.value.trim(),
+      reference: elements.referenceInput.value.trim(),
+      time: elements.entryTimeInput.value.trim(),
+      timeSpent: elements.timeSpentInput.value.trim(),
+    };
+  }
+
+  function clearEntryForm() {
+    elements.entryInput.value = "";
+    elements.entryDateInput.value = "";
+    elements.entryTimeInput.value = "";
+    elements.timeSpentInput.value = "";
+    elements.projectInput.value = "";
+    elements.referenceInput.value = "";
+  }
+
+  function rejectMultilineField(value, message, input) {
+    if (!hasLineBreak(value)) {
+      return false;
+    }
+
+    setStatus(message, "error");
+    input.focus();
+    return true;
   }
 
   function isEntryWithinRange(entry, range) {
@@ -192,7 +363,7 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
     }
 
     return getFilteredEntries(currentState.week.entries)
-      .map((entry) => entry.line || `${entry.date}${entry.time ? ` ${entry.time}` : ""} ${entry.message}`.trim())
+      .map(formatEntryLine)
       .join("\n");
   }
 
@@ -247,7 +418,7 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
     }
 
     for (const entry of entries) {
-      const entryLine = entry.line || `${entry.date}${entry.time ? ` ${entry.time}` : ""} ${entry.message}`.trim();
+      const entryLine = formatEntryLine(entry);
       const row = documentRef.createElement("article");
       row.className = "entry";
 
@@ -306,6 +477,97 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
     }
   }
 
+  function renderDiagram(entries) {
+    elements.diagramPanel.replaceChildren();
+
+    if (!entries.length) {
+      const empty = documentRef.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = "No activities available for the selected range";
+      elements.diagramPanel.append(empty);
+      elements.diagramSummary.textContent = "0 activities";
+      return;
+    }
+
+    const diagramData = buildDiagramData(entries);
+    const maxCount = Math.max(...diagramData.byDay.map((item) => item.count), 1);
+    const maxSpent = Math.max(...diagramData.byDay.map((item) => item.spentMinutes), 0, 1);
+    const totalSpent = diagramData.byDay.reduce((sum, item) => sum + item.spentMinutes, 0);
+
+    elements.diagramSummary.textContent = `${entries.length} activities · ${formatSpentMinutes(totalSpent)}`;
+
+    const daysSection = documentRef.createElement("section");
+    daysSection.className = "diagram__section";
+
+    const daysTitle = documentRef.createElement("h4");
+    daysTitle.className = "diagram__title";
+    daysTitle.textContent = "By day";
+    daysSection.append(daysTitle);
+
+    for (const item of diagramData.byDay) {
+      const row = documentRef.createElement("div");
+      row.className = "diagram-row";
+
+      const label = documentRef.createElement("div");
+      label.className = "diagram-row__label";
+      label.textContent = item.date;
+
+      const bars = documentRef.createElement("div");
+      bars.className = "diagram-row__bars";
+
+      const countBar = documentRef.createElement("div");
+      countBar.className = "diagram-bar";
+      countBar.dataset.metric = "count";
+      countBar.style.width = `${Math.max(14, Math.round((item.count / maxCount) * 100))}%`;
+      countBar.textContent = `${item.count} task${item.count === 1 ? "" : "s"}`;
+      bars.append(countBar);
+
+      if (item.spentMinutes > 0) {
+        const spentBar = documentRef.createElement("div");
+        spentBar.className = "diagram-bar";
+        spentBar.dataset.metric = "spent";
+        spentBar.style.width = `${Math.max(14, Math.round((item.spentMinutes / maxSpent) * 100))}%`;
+        spentBar.textContent = formatSpentMinutes(item.spentMinutes);
+        bars.append(spentBar);
+      }
+
+      row.append(label, bars);
+      daysSection.append(row);
+    }
+
+    elements.diagramPanel.append(daysSection);
+
+    if (diagramData.byProject.length) {
+      const projectSection = documentRef.createElement("section");
+      projectSection.className = "diagram__section";
+
+      const projectTitle = documentRef.createElement("h4");
+      projectTitle.className = "diagram__title";
+      projectTitle.textContent = "By project";
+      projectSection.append(projectTitle);
+
+      for (const item of diagramData.byProject.slice(0, 6)) {
+        const row = documentRef.createElement("div");
+        row.className = "diagram-project";
+
+        const name = documentRef.createElement("div");
+        name.className = "diagram-project__name";
+        name.textContent = item.name;
+
+        const meta = documentRef.createElement("div");
+        meta.className = "diagram-project__meta";
+        meta.textContent = item.spentMinutes > 0
+          ? `${item.count} task${item.count === 1 ? "" : "s"} · ${formatSpentMinutes(item.spentMinutes)}`
+          : `${item.count} task${item.count === 1 ? "" : "s"}`;
+
+        row.append(name, meta);
+        projectSection.append(row);
+      }
+
+      elements.diagramPanel.append(projectSection);
+    }
+  }
+
   function renderState(state) {
     currentState = state;
     currentWeekRef = state.week.weekStart;
@@ -340,6 +602,7 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
 
     renderEntries(elements.weekEntries, filteredEntries, "No entries match the selected date range");
     renderEntries(elements.todayEntries, state.today.entries, "No entries for today");
+    renderDiagram(filteredEntries);
     updateFilterSummary(state, filteredEntries);
     scheduleWindowFit();
   }
@@ -366,11 +629,7 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
 
   async function addEntry(event) {
     event.preventDefault();
-    const message = elements.entryInput.value.trim();
-    const date = elements.entryDateInput.value.trim();
-    const time = elements.entryTimeInput.value.trim();
-    const project = elements.projectInput.value.trim();
-    const reference = elements.referenceInput.value.trim();
+    const { date, message, project, reference, time, timeSpent } = readEntryForm();
 
     if (!message) {
       setStatus("Enter a log message.", "error");
@@ -378,15 +637,15 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
       return;
     }
 
-    if (project.includes("\n") || project.includes("\r")) {
-      setStatus("Task project must be a single line.", "error");
-      elements.projectInput.focus();
+    if (rejectMultilineField(timeSpent, "Time spent must be a single line.", elements.timeSpentInput)) {
       return;
     }
 
-    if (reference.includes("\n") || reference.includes("\r")) {
-      setStatus("Ticket or link must be a single line.", "error");
-      elements.referenceInput.focus();
+    if (rejectMultilineField(project, "Task project must be a single line.", elements.projectInput)) {
+      return;
+    }
+
+    if (rejectMultilineField(reference, "Ticket or link must be a single line.", elements.referenceInput)) {
       return;
     }
 
@@ -399,18 +658,14 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
           currentEditing.line,
           date,
           time,
-          buildEntryMessage(message, project, reference),
+          buildEntryMessage(message, timeSpent, project, reference),
         ));
         setStatus("Entry updated.", "ok");
       } else {
-        renderState(await api.addEntry(buildEntryMessage(message, project, reference), time, date));
+        renderState(await api.addEntry(buildEntryMessage(message, timeSpent, project, reference), time, date));
         setStatus("Entry added.", "ok");
       }
-      elements.entryInput.value = "";
-      elements.entryDateInput.value = "";
-      elements.entryTimeInput.value = "";
-      elements.projectInput.value = "";
-      elements.referenceInput.value = "";
+      clearEntryForm();
       setEditingEntry(null);
       showView("week");
     } catch (error) {
@@ -539,12 +794,14 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
     for (const button of elements.windowButtons) {
       button.addEventListener("click", async () => {
         const action = button.dataset.windowAction;
-        if (action === "minimize") {
-          await window.worktrace.minimizeWindow();
-        } else if (action === "maximize") {
-          await window.worktrace.maximizeWindow();
-        } else if (action === "close") {
-          await window.worktrace.closeWindow();
+        const handler = {
+          close: api.closeWindow,
+          maximize: api.maximizeWindow,
+          minimize: api.minimizeWindow,
+        }[action];
+
+        if (handler) {
+          await handler();
         }
       });
     }
@@ -602,9 +859,15 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
 
 if (typeof module !== "undefined") {
   module.exports = {
+    buildDiagramData,
     buildEntryMessage,
     collectElements,
     createWorktraceRenderer,
+    formatEntryLine,
+    formatSpentMinutes,
+    hasLineBreak,
+    parseSpentToMinutes,
+    parseEntryMessage,
     viewTitles,
   };
 }

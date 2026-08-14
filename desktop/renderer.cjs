@@ -140,7 +140,7 @@ function parseEntryMessage(message) {
   };
 
   while (true) {
-    const match = /\s+\[(spent|project|ref): ([^\]]+)\]$/.exec(result.message);
+    const match = /\s+\[(spent|project|ref): ([^]]+)]$/.exec(result.message);
 
     if (!match) {
       return result;
@@ -239,7 +239,13 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
       const bodyHeight = documentRef.body && documentRef.body.scrollHeight
         ? documentRef.body.scrollHeight
         : 0;
-      const nextHeight = Math.max(documentHeight, bodyHeight);
+      const documentRectHeight = documentRef.documentElement && typeof documentRef.documentElement.getBoundingClientRect === "function"
+        ? documentRef.documentElement.getBoundingClientRect().height
+        : 0;
+      const bodyRectHeight = documentRef.body && typeof documentRef.body.getBoundingClientRect === "function"
+        ? documentRef.body.getBoundingClientRect().height
+        : 0;
+      const nextHeight = Math.max(documentHeight, bodyHeight, documentRectHeight, bodyRectHeight);
 
       if (nextHeight > 0) {
         api.fitWindowHeight(nextHeight).catch(() => {});
@@ -346,11 +352,7 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
       return false;
     }
 
-    if (range.end && compareDates(entry.date, range.end) > 0) {
-      return false;
-    }
-
-    return true;
+    return !(range.end && compareDates(entry.date, range.end) > 0);
   }
 
   function getFilteredEntries(entries) {
@@ -827,11 +829,18 @@ function createWorktraceRenderer({ document: documentRef, api, initialView = "we
     }
     setEditingEntry(null);
     showView(currentView);
+    scheduleWindowFit();
     if (typeof ResizeObserver !== "undefined" && documentRef.body) {
       const resizeObserver = new ResizeObserver(() => {
         scheduleWindowFit();
       });
       resizeObserver.observe(documentRef.body);
+      if (documentRef.documentElement) {
+        resizeObserver.observe(documentRef.documentElement);
+      }
+    }
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+      window.addEventListener("resize", scheduleWindowFit);
     }
     return loadState();
   }

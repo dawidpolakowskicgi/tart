@@ -132,7 +132,7 @@ function fitWindowToContent(contentHeight) {
   }
 
   const display = screen.getDisplayMatching(mainWindow.getBounds());
-  const maxHeight = Math.max(MIN_WINDOW_HEIGHT, display.workArea.height - 24);
+  const maxHeight = Math.max(MIN_WINDOW_HEIGHT, display.workArea.height);
   const nextHeight = Math.max(MIN_WINDOW_HEIGHT, Math.min(Math.ceil(requestedHeight), maxHeight));
   const [currentWidth, currentHeight] = mainWindow.getContentSize();
 
@@ -144,17 +144,28 @@ function fitWindowToContent(contentHeight) {
 }
 
 function createWindow() {
+  const transparentWindowOptions = process.platform === "darwin"
+    ? {
+        transparent: true,
+        vibrancy: "under-window",
+        visualEffectState: "active",
+      }
+    : {
+        transparent: true,
+      };
+
   mainWindow = new BrowserWindow({
     width: DEFAULT_WINDOW_WIDTH,
     height: DEFAULT_WINDOW_HEIGHT,
     minWidth: MIN_WINDOW_WIDTH,
     minHeight: MIN_WINDOW_HEIGHT,
     title: "worktrace",
-    backgroundColor: "#f6f7f3",
+    backgroundColor: "#00000000",
     icon: appIconPath(),
     frame: false,
     show: false,
     useContentSize: true,
+    ...transparentWindowOptions,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -262,7 +273,7 @@ function buildWeekPdfHtml(week) {
     `;
 
   return `<!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <title>worktrace week ${escapeHtml(week.weekStart)}</title>

@@ -71,6 +71,7 @@
         <nav class="tabs" aria-label="Views">
           <button class="tab is-active" data-view="week" type="button">Week</button>
           <button class="tab" data-view="today" type="button">Today</button>
+          <button class="tab" data-view="diagram" type="button">Diagram</button>
           <button class="tab" data-view="edit" type="button">Edit</button>
         </nav>
 
@@ -123,6 +124,7 @@
         <form class="entry-form" id="entryForm">
           <input id="entryDateInput" name="entryDate" autocomplete="off" type="date" aria-label="Log date">
           <input id="entryTimeInput" name="entryTime" autocomplete="off" type="time" aria-label="Log time">
+          <input id="timeSpentInput" name="timeSpent" autocomplete="off" maxlength="60" placeholder="Time spent" aria-label="Time spent">
           <input id="entryInput" name="entry" autocomplete="off" maxlength="240" placeholder="Add activity text to log" aria-label="Log entry">
           <input id="projectInput" name="project" autocomplete="off" maxlength="120" placeholder="Task project" aria-label="Task project">
           <input id="referenceInput" name="reference" autocomplete="off" maxlength="180" placeholder="Ticket or link" aria-label="Ticket number or link">
@@ -147,6 +149,14 @@
             <span id="todayDate">-</span>
           </div>
           <div class="entries" id="todayEntries"></div>
+        </section>
+
+        <section class="view" id="diagramView" aria-labelledby="viewTitle">
+          <div class="section-heading">
+            <h3>Activity diagram</h3>
+            <span id="diagramSummary">-</span>
+          </div>
+          <div class="diagram" id="diagramPanel"></div>
         </section>
 
         <section class="view" id="editView" aria-labelledby="viewTitle">

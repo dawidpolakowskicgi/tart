@@ -585,7 +585,7 @@ select#weekRefInput {
 
 .entry-form {
   display: grid;
-  grid-template-columns: 180px 160px minmax(0, 1.35fr) minmax(180px, 0.7fr) minmax(220px, 0.9fr);
+  grid-template-columns: 180px 160px 140px minmax(0, 1.35fr) minmax(180px, 0.7fr) minmax(220px, 0.9fr);
   gap: 12px;
   align-items: stretch;
   border: 1px solid var(--line);
@@ -611,6 +611,7 @@ select#weekRefInput {
 }
 
 .entry-form #entryInput,
+.entry-form #timeSpentInput,
 .entry-form #projectInput,
 .entry-form #referenceInput {
   min-width: 0;
@@ -622,6 +623,7 @@ select#weekRefInput {
   font-weight: 600;
 }
 
+.entry-form #timeSpentInput,
 .entry-form #projectInput,
 .entry-form #referenceInput {
   font-size: 15px;
@@ -695,6 +697,85 @@ select#weekRefInput:focus {
   display: grid;
   grid-template-rows: auto auto;
   gap: 12px;
+}
+
+.diagram {
+  display: grid;
+  gap: 18px;
+}
+
+.diagram__section {
+  display: grid;
+  gap: 12px;
+}
+
+.diagram__title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.diagram-row,
+.diagram-project {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--editor);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-soft);
+}
+
+.diagram-row {
+  grid-template-columns: 140px minmax(0, 1fr);
+  align-items: center;
+}
+
+.diagram-row__label,
+.diagram-project__name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.diagram-row__bars {
+  display: grid;
+  gap: 8px;
+}
+
+.diagram-bar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.diagram-bar[data-metric="count"] {
+  background: linear-gradient(90deg, var(--accent-soft), color-mix(in srgb, var(--accent) 28%, transparent));
+  color: var(--accent-strong);
+}
+
+.diagram-bar[data-metric="spent"] {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ink) 8%, transparent), color-mix(in srgb, var(--ink) 16%, transparent));
+  color: var(--ink);
+}
+
+.diagram-project {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.diagram-project__meta {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .section-heading {
@@ -863,6 +944,7 @@ h3 {
   }
 
   .entry-form #entryInput,
+  .entry-form #timeSpentInput,
   .entry-form #referenceInput {
     min-width: 0;
   }
@@ -917,6 +999,11 @@ h3 {
   }
 
   .entry {
+    grid-template-columns: 1fr;
+  }
+
+  .diagram-row,
+  .diagram-project {
     grid-template-columns: 1fr;
   }
 

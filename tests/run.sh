@@ -4,7 +4,7 @@ set -u
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKTRACE_BIN="${ROOT_DIR}/worktrace.sh"
 TEST_TODAY="2026-04-30"
-TEST_WEEK_START="2026-04-27"
+TEST_WEEK_BEGIN="2026-04-27"
 
 PASS_COUNT=0
 FAIL_COUNT=0
@@ -125,7 +125,7 @@ write_week_log() {
   fi
 
   mkdir -p "$log_dir"
-  printf '%s\n' "$content" > "${log_dir}/${TEST_WEEK_START}.log"
+  printf '%s\n' "$content" > "${log_dir}/${TEST_WEEK_BEGIN}.log"
 }
 
 test_help_and_version() {
@@ -143,7 +143,7 @@ test_command_help_aliases_are_consistent() {
   run_worktrace "$TEST_TMPDIR" add --help
   assert_status 0 || return 1
   assert_contains "$LAST_OUTPUT" "Commands:" || return 1
-  assert_file_missing "${TEST_TMPDIR}/${TEST_WEEK_START}.log" || return 1
+  assert_file_missing "${TEST_TMPDIR}/${TEST_WEEK_BEGIN}.log" || return 1
 
   run_worktrace "$TEST_TMPDIR" today --help
   assert_status 0 || return 1
@@ -187,21 +187,21 @@ test_add_writes_to_current_week_file() {
   run_worktrace "$TEST_TMPDIR" add implemented enterprise tests
   assert_status 0 || return 1
   assert_eq "Logged: ${TEST_TODAY} implemented enterprise tests" "$LAST_OUTPUT" || return 1
-  assert_file_eq "${TEST_TMPDIR}/${TEST_WEEK_START}.log" "${TEST_TODAY} implemented enterprise tests"
+  assert_file_eq "${TEST_TMPDIR}/${TEST_WEEK_BEGIN}.log" "${TEST_TODAY} implemented enterprise tests"
 }
 
 test_quick_add_remains_backwards_compatible() {
   run_worktrace "$TEST_TMPDIR" quick compatibility entry
   assert_status 0 || return 1
   assert_eq "Logged: ${TEST_TODAY} quick compatibility entry" "$LAST_OUTPUT" || return 1
-  assert_file_eq "${TEST_TMPDIR}/${TEST_WEEK_START}.log" "${TEST_TODAY} quick compatibility entry"
+  assert_file_eq "${TEST_TMPDIR}/${TEST_WEEK_BEGIN}.log" "${TEST_TODAY} quick compatibility entry"
 }
 
 test_dash_prefixed_messages_are_supported() {
   run_worktrace "$TEST_TMPDIR" -- -dash-prefixed note
   assert_status 0 || return 1
   assert_eq "Logged: ${TEST_TODAY} -dash-prefixed note" "$LAST_OUTPUT" || return 1
-  assert_file_eq "${TEST_TMPDIR}/${TEST_WEEK_START}.log" "${TEST_TODAY} -dash-prefixed note"
+  assert_file_eq "${TEST_TMPDIR}/${TEST_WEEK_BEGIN}.log" "${TEST_TODAY} -dash-prefixed note"
 }
 
 test_list_defaults_to_current_week() {
@@ -230,7 +230,7 @@ ${TEST_TODAY} current day"
 }
 
 test_week_references_normalize_to_monday() {
-  local expected_path="${TEST_TMPDIR}/${TEST_WEEK_START}.log"
+  local expected_path="${TEST_TMPDIR}/${TEST_WEEK_BEGIN}.log"
 
   run_worktrace "$TEST_TMPDIR" path 2026-04-30
   assert_status 0 || return 1
@@ -261,8 +261,8 @@ test_legacy_week_aliases() {
 test_config_uses_resolved_values() {
   local expected="version=0.3.0
 log_dir=${TEST_TMPDIR}
-current_week=${TEST_WEEK_START}
-current_file=${TEST_TMPDIR}/${TEST_WEEK_START}.log"
+current_week=${TEST_WEEK_BEGIN}
+current_file=${TEST_TMPDIR}/${TEST_WEEK_BEGIN}.log"
 
   run_worktrace "$TEST_TMPDIR" config
   assert_status 0 || return 1
@@ -276,7 +276,7 @@ test_global_log_dir_overrides_environment() {
   run_worktrace "$TEST_TMPDIR" --log-dir "$override_dir" add overridden directory
   assert_status 0 || return 1
   assert_eq "Logged: ${TEST_TODAY} overridden directory" "$LAST_OUTPUT" || return 1
-  assert_file_eq "${override_dir}/${TEST_WEEK_START}.log" "${TEST_TODAY} overridden directory"
+  assert_file_eq "${override_dir}/${TEST_WEEK_BEGIN}.log" "${TEST_TODAY} overridden directory"
 }
 
 test_invalid_date_returns_usage_error() {
@@ -301,7 +301,7 @@ test_multiline_add_message_returns_usage_error() {
   run_worktrace "$TEST_TMPDIR" add $'first line\nsecond line'
   assert_status 2 || return 1
   assert_contains "$LAST_OUTPUT" "entry message must be a single line" || return 1
-  assert_file_missing "${TEST_TMPDIR}/${TEST_WEEK_START}.log"
+  assert_file_missing "${TEST_TMPDIR}/${TEST_WEEK_BEGIN}.log"
 }
 
 test_desktop_core_suite() {

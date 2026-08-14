@@ -6,7 +6,7 @@
     <title>worktrace</title>
     <link rel="stylesheet" href="./styles.css">
   </head>
-  <body>
+  <body data-theme="dark">
     <header class="topbar">
       <div class="titlebar-drag topbar__brand">
         <div class="topbar__mark" aria-hidden="true">
@@ -164,6 +164,7 @@
             <h3>Raw weekly file</h3>
             <button class="save-button" id="saveWeekButton" type="button">Save</button>
           </div>
+          <label class="sr-only" for="weekEditor">Raw weekly file content</label>
           <textarea id="weekEditor" spellcheck="false"></textarea>
         </section>
       </main>
